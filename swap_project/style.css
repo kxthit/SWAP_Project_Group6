@@ -1,0 +1,128 @@
+/* Reset styles */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f5fffa;
+}
+
+/* Header */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #6495ed;
+  color: #333;
+  display: flex;
+  justify-content: space-between; /* This aligns content to the space between */
+  align-items: center;
+  padding: 10px 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  height: 60px;
+}
+
+/* User Info */
+.user-info {
+  display: flex;
+  align-items: center;
+  margin-right: 20px; /* Adjust this value as needed */
+}
+
+/* Profile */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Adds space between profile picture and details */
+}
+
+/* Profile Picture */
+.profile-pic {
+  width: 5px; /* Adjust the width */
+  height: 5px;
+  border-radius: 50%; /* Circular image */
+  border: 2px solid #ddd; /* Optional styling */
+  object-fit: cover; /* Ensures the image doesn't stretch */
+}
+
+/* User Details */
+
+
+.user-name {
+  font-size: 0.9em; /* Adjust font size */
+  font-weight: bold;
+  margin: 0;
+  margin-right: 10px;
+}
+
+.user-role {
+  font-size: 0.8em;
+  color:black;
+  margin: 0;
+}
+
+  
+  
+  /* Container */
+  .container {
+    display: flex;
+    margin-top: 80px; /* Leaves space for the fixed header */
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    width: 170px;
+    background-color: #f4f4f4;
+    color: #333;
+    padding: 20px;
+    height: calc(100vh - 50px); /* Sidebar height adjusts for the header */
+    overflow-y: auto; /* Makes the sidebar scrollable if its content exceeds its height */
+    z-index: 0; /* Ensures the sidebar stays on top */
+  }
+  
+  .sidebar p {
+    color: grey; /* Change text color to grey */
+    font-size: 11px; /* Make the text smaller */
+    text-align: right; /* Align the text to the right */
+    margin-right: 100px; /* Add some space to the right */
+    font-weight: lighter; /* Optional: Make it bold for emphasis */
+    margin-top: 50px;
+  }
+  
+  .sidebar ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .sidebar li {
+    padding: 10px;
+    margin: 2px 0;
+    background: #f4f4f4;
+    border-radius: 50px;
+    text-align: center;
+    cursor: pointer;
+  }
+  
+  .sidebar li:hover {
+    background: #87cefa;
+  }
+  
+  .sidebar a {
+    text-decoration: none; /* Removes underline from links */
+    color: inherit; /* Inherits text color from parent (sidebar item) */
+    display: block; /* Makes the entire list item clickable */
+  }
+  
+  .sidebar li:hover a {
+    color: white; /* Changes link text color on hover */
+  }
+  
+  /* Main Content */
+  .main-content {
+    margin-left: 250px;
+    padding: 20px;
+  }
+  
