@@ -134,11 +134,6 @@
                 <div>
                     <button type="submit">Submit</button>
                 </div>
-                <?php
-                if (!empty($error_message)) {
-                    echo "<h2 style='color: red;'>$error_message</h2>";
-                }
-                ?>
             </form>
         </div>
     </div>
