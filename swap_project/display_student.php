@@ -139,6 +139,56 @@ $average_gpa = $total_courses > 0 ? $total_gpa / $total_courses : 0;
             background-color: #0056b3;
         }
 
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4); /* Black with transparency */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 30%; /* Could be more or less, depending on screen size */
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons a {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .modal-buttons a:hover {
+            background-color: #0056b3;
+        }
+
+        .modal-buttons .btn-cancel {
+            background-color: #6c757d;
+        }
+
+        .modal-buttons .btn-cancel:hover {
+            background-color: #545b62;
+        }
+
     </style>
 </head>
 <body>
@@ -195,8 +245,34 @@ $average_gpa = $total_courses > 0 ? $total_gpa / $total_courses : 0;
 
     <div class="action-buttons">
         <a href="edit_studentform1.php?student_id=<?php echo $student['student_id']; ?>">Edit</a>
-        <a href="delete_student.php?student_id=<?php echo $student['student_id']; ?>" onclick="confirmDelete(<?php echo $student['student_id']; ?>)">Delete</a>
+        <a href="#" onclick="openModal(123)" class="delete-button">Delete</a>
     </div>
+
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <p>Are you sure you want to delete this student?</p>
+            <div class="modal-buttons">
+                <a href="#" id="confirmDelete" class="btn-confirm">Yes, Delete</a>
+                <a href="#" onclick="closeModal()" class="btn-cancel">Cancel</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let studentIdToDelete = null;
+
+        function openModal(studentId) {
+            studentIdToDelete = studentId;
+            document.getElementById('deleteModal').style.display = 'block';
+            const confirmButton = document.getElementById('confirmDelete');
+            confirmButton.href = `delete_student.php?student_id=${encodeURIComponent(studentId)}`;
+        }
+
+        function closeModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            studentIdToDelete = null;
+        }
+    </script>
 
     <h3 style="text-align: center;">Grades</h3>
     <table>
@@ -221,10 +297,16 @@ $average_gpa = $total_courses > 0 ? $total_gpa / $total_courses : 0;
 
 <script>
     function confirmDelete(studentId) {
+        // Show a confirmation dialog
         if (confirm("Are you sure you want to delete this student?")) {
-            window.location.href = 'delete_student.php?student_id=' + studentId;
+            // If "OK" is pressed, redirect to the delete page
+            window.location.href = 'delete_student.php?student_id=' + encodeURIComponent(studentId);
+        } else {
+            // If "Cancel" is pressed, do nothing (explicitly stated for clarity)
+            console.log("Deletion canceled");
         }
     }
 </script>
+
 </body>
 </html>
