@@ -245,7 +245,7 @@ $average_gpa = $total_courses > 0 ? $total_gpa / $total_courses : 0;
 
     <div class="action-buttons">
         <a href="edit_studentform1.php?student_id=<?php echo $student['student_id']; ?>">Edit</a>
-        <a href="#" onclick="openModal(123)" class="delete-button">Delete</a>
+        <a href="#" onclick="openModal(<?php echo $student['student_id']; ?>)" class="delete-button">Delete</a>
     </div>
 
     <div id="deleteModal" class="modal">
