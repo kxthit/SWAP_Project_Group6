@@ -3,56 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Header Example</title>
+    <title>Admin Panel</title>
     <link rel="stylesheet" href="style.css"> <!-- Link to your CSS -->
 </head>
 <body>
-
-    <!-- header.php -->
+    <!-- Header Section -->
     <header>
-      <div class="logo"></div>
-      <div class="user-info">
-        <!-- Profile Picture -->
-        <div class="profile">
-
-        <!-- User Details -->
-          <div class="user-details">
-            <p class="user-name"><?php echo htmlspecialchars($_SESSION['session_name'] ?? 'Guest'); ?></p>
-            <p class="user-role">
-              <?php 
-                // Determine role based on session_role
-                switch ($_SESSION['session_role'] ?? '') {
-                  case 1: echo 'Admin'; break;
-                  case 2: echo 'Faculty'; break;
-                  case 3: echo 'Student'; break;
-                  default: echo 'Unknown Role'; break;
-                } 
-              ?>
-            </p>
-          </div>
-        </div> 
-      </div>
+        <div class="logo">
+            <img src="path/to/logo.png" alt="Logo" style="height: 40px;"> <!-- Optional -->
+        </div>
+        <div class="user-info">
+            <div class="profile">
+                <div class="user-details">
+                    <p class="user-name"><?php echo htmlspecialchars($_SESSION['session_name'] ?? 'Guest'); ?></p>
+                    <p class="user-role">
+                        <?php 
+                            switch ($_SESSION['session_role'] ?? '') {
+                                case 1: echo 'Admin'; break;
+                                case 2: echo 'Faculty'; break;
+                                case 3: echo 'Student'; break;
+                                default: echo 'Unknown Role'; break;
+                            } 
+                        ?>
+                    </p>
+                </div>
+            </div>
+        </div>
     </header>
 
-
-
-    <div class="container">
-      <aside class="sidebar">
-        <p>MAIN MENU</p>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
         <ul>
-          <li><a href="faculty_dashboard.php">Dashboard</a></li>
-          <li><a href="faculty_student.php">Students</a></li>
-          <li>Classes</li>
-          <li>Courses</li>
-          <li>Grades</li>
+            <li><a href="faculty_dashboard.php">Dashboard</a></li>
+            <li><a href="faculty_student.php">Students</a></li>
+            <li><a href="faculty_classes.php">Classes</a></li>
+            <li><a href="faculty_courses.php">Courses</a></li>
+            <li><a href="faculty_grades.php">Grades</a></li>
         </ul>
-        <p>SETTINGS</p>
-        <ul>
-          <li>Profile</li>
-          <li>Setting</li>
-          <li>Logout</li>
-        </ul>
-      </aside>
-    
+    </nav>
+
+    <div class="main-content">
+        <!-- Main content goes here -->
+    </div>
 </body>
 </html>
+
