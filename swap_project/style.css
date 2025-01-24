@@ -27,7 +27,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: flex-end; /* Align to the right side */
-  margin-right: 20px; /* Adjust this value to move it slightly to the left */
+  margin-right: 40px; /* Adjust this value to move it slightly to the left */
 }
 
 /* Profile */
