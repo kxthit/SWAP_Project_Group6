@@ -12,9 +12,9 @@ header {
   left: 0;
   width: 100%;
   background-color: #6495ed;
-  color: #333;
+  color: #fff;
   display: flex;
-  justify-content: space-between; /* This aligns content to the space between */
+  justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -26,103 +26,83 @@ header {
 .user-info {
   display: flex;
   align-items: center;
-  margin-right: 20px; /* Adjust this value as needed */
+  justify-content: flex-end; /* Align to the right side */
+  margin-right: 20px; /* Adjust this value to move it slightly to the left */
 }
 
 /* Profile */
 .profile {
   display: flex;
   align-items: center;
-  gap: 10px; /* Adds space between profile picture and details */
-}
-
-/* Profile Picture */
-.profile-pic {
-  width: 5px; /* Adjust the width */
-  height: 5px;
-  border-radius: 50%; /* Circular image */
-  border: 2px solid #ddd; /* Optional styling */
-  object-fit: cover; /* Ensures the image doesn't stretch */
+  gap: 10px; /* Adds space between elements in the profile */
 }
 
 /* User Details */
+.user-details {
+  text-align: right; /* Ensure text aligns properly */
+}
 
-
+/* Style for User Name */
 .user-name {
-  font-size: 0.9em; /* Adjust font size */
-  font-weight: bold;
-  margin: 0;
-  margin-right: 10px;
+  font-weight: bold; /* Make the name bold */
+  text-transform: uppercase; /* Convert the name to all caps */
+  margin: 0; /* Remove extra spacing */
 }
 
+/* Style for User Role */
 .user-role {
-  font-size: 0.8em;
-  color:black;
-  margin: 0;
+  font-size: 14px; /* Keep the role as it is */
+  color: #333; /* Optional: Adjust the color */
+  margin: 0; /* Remove extra spacing */
 }
 
-  
-  
-  /* Container */
-  .container {
-    display: flex;
-    margin-top: 80px; /* Leaves space for the fixed header */
-  }
-  
-  /* Sidebar */
-  .sidebar {
-    position: fixed;
-    top: 50px;
-    left: 0;
-    width: 170px;
-    background-color: #f4f4f4;
-    color: #333;
-    padding: 20px;
-    height: calc(100vh - 50px); /* Sidebar height adjusts for the header */
-    overflow-y: auto; /* Makes the sidebar scrollable if its content exceeds its height */
-    z-index: 0; /* Ensures the sidebar stays on top */
-  }
-  
-  .sidebar p {
-    color: grey; /* Change text color to grey */
-    font-size: 11px; /* Make the text smaller */
-    text-align: right; /* Align the text to the right */
-    margin-right: 100px; /* Add some space to the right */
-    font-weight: lighter; /* Optional: Make it bold for emphasis */
-    margin-top: 50px;
-  }
-  
-  .sidebar ul {
-    list-style-type: none;
-    padding: 0;
-  }
-  
-  .sidebar li {
-    padding: 10px;
-    margin: 2px 0;
-    background: #f4f4f4;
-    border-radius: 50px;
-    text-align: center;
-    cursor: pointer;
-  }
-  
-  .sidebar li:hover {
-    background: #87cefa;
-  }
-  
-  .sidebar a {
-    text-decoration: none; /* Removes underline from links */
-    color: inherit; /* Inherits text color from parent (sidebar item) */
-    display: block; /* Makes the entire list item clickable */
-  }
-  
-  .sidebar li:hover a {
-    color: white; /* Changes link text color on hover */
-  }
-  
-  /* Main Content */
-  .main-content {
-    margin-left: 250px;
-    padding: 20px;
-  }
-  
+/* Navigation Bar */
+.navbar {
+  background-color: #87cefa;
+  display: flex;
+  justify-content: center; /* Center the nav items horizontally */
+  align-items: center; /* Center the items vertically within the bar */
+  position: fixed;
+  top: 80px; /* Position below the header */
+  left: 0;
+  width: 100%;
+  height: 60px; /* Increase the height for a thicker bar */
+  z-index: 999; /* Ensure it stays on top of the content */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.navbar ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 30px; /* Increase space between nav items */
+}
+
+.navbar li {
+  text-align: center;
+}
+
+.navbar a {
+  display: block;
+  padding: 10px 20px; /* Add padding for better spacing */
+  text-decoration: none;
+  color: #fff;
+  font-size: 16px; /* Slightly larger font for readability */
+  font-weight: bold;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+  line-height: 1.5; /* Vertically aligns text in links */
+  text-align: center;
+}
+
+.navbar a:hover {
+  background-color: #6495ed; /* Highlight effect on hover */
+  color: #fff;
+}
+
+/* Main Content */
+.main-content {
+  margin-top: 70px; /* Adjust for fixed header and navbar */
+  padding: 20px;
+}
