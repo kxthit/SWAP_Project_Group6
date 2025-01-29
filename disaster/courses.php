@@ -1,174 +1,249 @@
-<!DOCTYPE html>
-<html>
 <?php
-session_start();
- 
-// Check if the user is authenticated
-if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_role'])) {
-    echo "<h2>Unauthorized access. Please log in.</h2>";
-    header('Refresh: 3; URL=login.php');
-    exit;
-}
- 
-// Check if the user is either Admin or Faculty (role_id 1 or 2)
-if ($_SESSION['session_role'] != 1 && $_SESSION['session_role'] != 2) {
-    echo "<h2>You do not have permission to access this page.</h2>";
-    exit;
-}
- 
-include('admin_header.php');
+// Include the database connection
+include 'db_connection.php';
 
+session_start();
+
+// Check if the user is authenticated
+if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
+    echo "<script>
+            alert('Unauthorized user. Redirecting To Login.');
+            window.location.href = 'login.php'; // Redirect to homepage or any page you want
+          </script>";
+    exit;
+}
+
+// Get role and user ID from session
+$role_id = $_SESSION['session_roleid']; // Get role ID from the session
+$user_id = $_SESSION['session_userid']; // Get user ID from the session
+
+// Fetch Faculty's Department ID if the user is Faculty (role 2)
+if ($role_id == 2) {
+    $query = "
+        SELECT faculty.department_id
+        FROM faculty
+        WHERE faculty.user_id = ?
+    ";
+
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param('i', $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    // Store department_id in session for future use
+    if ($row = $result->fetch_assoc()) {
+        $_SESSION['session_facultydepartmentid'] = $row['department_id'];
+    } else {
+        error_log("No department found for faculty user_id: " . $user_id);
+    }
+}
+
+// Build the SQL query dynamically based on user input for search and filters
+$search_term = isset($_GET['search']) ? $_GET['search'] : '';
+$department_filter = isset($_GET['department']) ? $_GET['department'] : '';
+$class_filter = isset($_GET['class']) ? $_GET['class'] : '';
+
+// Initialize params array with search term (for LIKE query)
+$params = ["%$search_term%"]; // Start with search term for LIKE query
+
+// Initialize query
+$query = "
+    SELECT 
+        course.course_id, 
+        course.course_name, 
+        department.department_name
+    FROM course
+    INNER JOIN department ON course.department_id = department.department_id
+    LEFT JOIN class ON class.course_id = course.course_id
+    WHERE course.course_name LIKE ?
+";
+
+// **Admin Query** (No filters needed for admin, just the search term)
+if ($role_id == 1) { // Admin
+    // Admin doesn’t need department filter or class filter
+    // Simply add the search term to the query
+    $params = ["%$search_term%"];
+} 
+
+// **Faculty Query** (Add department and class filters)
+if ($role_id == 2) { // Faculty
+    // Faculty-specific conditions
+    $query .= "
+        AND course.department_id = ?
+        AND course.course_id IN (
+            SELECT faculty_course.course_id
+            FROM faculty_course
+            INNER JOIN faculty ON faculty_course.faculty_id = faculty.faculty_id
+            WHERE faculty.user_id = ?
+        )
+    ";
+    $params[] = $_SESSION['session_facultydepartmentid']; // Faculty's department
+    $params[] = $user_id; // Faculty's user_id
+}
+
+// For other roles (Admin or Faculty), apply the department filter if provided
+if (!empty($department_filter) && $role_id != 1) {
+    $query .= " AND department.department_id = ?";
+    $params[] = $department_filter; // Department filter
+}
+
+// Apply the class filter if a class has been selected
+if (!empty($class_filter)) {
+    $query .= " AND class.class_id = ?";
+    $params[] = $class_filter; // Class filter
+}
+
+// Debugging: Log the query and parameters before binding
+error_log("SQL Query: " . $query);
+error_log("Parameters: " . print_r($params, true));
+
+// Prepare the statement
+$stmt = $conn->prepare($query);
+
+// Dynamically determine the types for binding (e.g., 's' for string, 'i' for integer)
+$bind_types = '';
+foreach ($params as $param) {
+    $bind_types .= is_int($param) ? 'i' : 's';
+}
+
+// Debugging: Log the bind types
+error_log("Bind Types: " . $bind_types);
+
+// Check if we have params to bind
+if (!empty($params)) {
+    $stmt->bind_param($bind_types, ...$params);
+} else {
+    error_log("Warning: No parameters to bind.");
+}
+
+// Execute the prepared statement
+if ($stmt->execute()) {
+    $result = $stmt->get_result();
+} else {
+    error_log("Query Execution Failed: " . $stmt->error);
+    // Handle error, if needed
+}
+
+// Check if the query was successful
+if ($result && $result->num_rows > 0) {
+    $courses = mysqli_fetch_all($result, MYSQLI_ASSOC);
+    error_log("Courses fetched: " . count($courses));
+} else {
+    $courses = [];
+    error_log("No courses found or query failed.");
+}
+
+// Fetch departments for the filter dropdown (we need this for the form)
+if ($role_id == 1) {
+    // For Admin: Fetch all departments
+    $departments_query = "SELECT department_id, department_name FROM department";
+} else {
+    // For Faculty: Fetch only departments that the faculty belongs to
+    $departments_query = "
+        SELECT department.department_id, department.department_name
+        FROM department
+        WHERE department.department_id = ?
+    ";
+}
+
+$departments_stmt = $conn->prepare($departments_query);
+if ($role_id == 2) {
+    $departments_stmt->bind_param('i', $_SESSION['session_facultydepartmentid']);
+}
+$departments_stmt->execute();
+$departments_result = $departments_stmt->get_result();
+
+// Fetch classes for the filter dropdown (we need this for the form)
+if ($role_id == 1) {
+    // For Admin: Fetch all classes
+    $classes_query = "SELECT class_id, class_name FROM class";
+} else {
+    // For Faculty: Fetch only the classes they are assigned to
+    $classes_query = "
+        SELECT class.class_id, class.class_name
+        FROM class
+        INNER JOIN faculty_course ON class.course_id = faculty_course.course_id
+        INNER JOIN faculty ON faculty_course.faculty_id = faculty.faculty_id
+        WHERE faculty.user_id = ?
+    ";
+}
+
+$classes_stmt = $conn->prepare($classes_query);
+if ($role_id == 2) {
+    $classes_stmt->bind_param('i', $user_id);
+}
+$classes_stmt->execute();
+$classes_result = $classes_stmt->get_result();
 ?>
 
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f8ff; /* Alice Blue background */
-            margin: 0;
-            padding: 0;
-        }
-
-        #title {
-            text-align: center;
-            font-size: 2.5rem; /* Bigger and bold */
-            font-weight: bold;
-            color: #004080; /* Nice dark blue */
-            margin-bottom: 20px;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 90%;
-            margin: 20px auto;
-            background-color: #ffffff; /* White table */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
-            cursor: default;
-        }
-
-        th, td {
-            border: 1px solid #dce7f1; /* Light blue borders */
-            padding: 12px;
-            text-align: center;
-            cursor: default;
-        }
-
-        th {
-            background-color: #007ACC; /* Sky blue header */
-            color: white;
-            font-weight: bold;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f2f9ff; /* Light sky blue for even rows */
-        }
-
-        tr:hover {
-            background-color: #e6f7ff; /* Slight hover effect */
-            cursor: pointer;
-        }
-
-        td img {
-            width: 40px; /* Increased from 20px */
-            height: 40px; /* Increased from 20px */
-            cursor: pointer;
-            margin: 0 5px;
-}
-        
-        .button-container {
-            text-align: center; /* Centering the button */
-            margin-top: 20px; /* Optional, just to add some breathing room */
-        }
-
-        /* Add Course button style */
-        button.add-course {
-            align-items: center;
-            font-size: 1.5rem; /* Larger font */
-            padding: 10px 20px;
-            background-color: #0078D7; /* Bright blue for the button */
-            color: white;
-            border: none;
-            border-radius: 5px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
-        }
-
-        /* Add hover effect for the button */
-        button.add-course:hover {
-            background-color: #005BB5; /* Darker blue on hover */
-            transform: scale(1.05); /* Slight zoom effect */
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;700&family=Source+Sans+Pro:wght@300;400;700&display=swap" rel="stylesheet">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="css/courses.css">
 </head>
 
 <body>
 
-    <h1 id="title">Course Data</h1>
+    <?php
+    
+    include('admin_header.php'); ?>
 
-    <!-- Table for Displaying Data -->
-    <table>
-        <thead>
-            <tr>
-                <th>Course ID</th>
-                <th>Course Name</th>
-                <th>Course Code</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Status ID</th>
-                <th>Department ID</th>
-                <th colspan="2">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            // Connect to database
-            $con = mysqli_connect("localhost", "root", "", "xyzpoly");
-            if (!$con) {
-                die('Could not connect: ' . mysqli_connect_errno());
-            }
+    <main class="main-content">
 
-            // Fetch data
-            $stmt = $con->prepare("
-    SELECT course.course_id, course.course_name, course.course_code, course.start_date, course.end_date, status.status_name, department.department_name
-    FROM course
-    JOIN status ON course.status_id = status.status_id
-    JOIN department ON course.department_id = department.department_id
-");
-            $stmt->execute();
-            $result = $stmt->get_result();
+    <p class="page-title">Courses</p>
 
-            // Dynamically fill table rows
-            while ($row = $result->fetch_assoc()) {
-                echo "<tr>";
-                echo "<td>" . $row['course_id'] . "</td>";
-                echo "<td>" . $row['course_name'] . "</td>";
-                echo "<td>" . $row['course_code'] . "</td>";
-                echo "<td>" . $row['start_date'] . "</td>";
-                echo "<td>" . $row['end_date'] . "</td>";
-                echo "<td>" . $row['status_name'] . "</td>";
-                echo "<td>" . $row['department_name'] . "</td>";
+        <!-- Filters Section -->
+        <section class="filters">
+            <form method="get" action="">
+                <input type="text" name="search" placeholder="Search for courses" value="<?php echo htmlspecialchars($search_term); ?>">
 
-                // Add icons for Edit and Delete
-                echo "<td><a href='admin_course_updateform.php?course_id=" . $row['course_id'] . "'>
-                        <img src='/assignment/images/edit-button.png' alt='Edit' title='Edit'></a></td>";
-                echo "<td><a href='admin_course_delete.php?course_id=" . $row['course_id'] . "'>
-                        <img src='/assignment/images/delete-button.png' alt='Delete' title='Delete'></a></td>";
-                echo "</tr>";
-            }
+                <select name="department">
+                    <option value="">Search Department</option>
+                    <?php while ($department = mysqli_fetch_assoc($departments_result)): ?>
+                        <option value="<?php echo $department['department_id']; ?>" <?php echo ($department_filter == $department['department_id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($department['department_name']); ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
 
-            // Close connection
-            $con->close();
-            ?>
-        </tbody>
-    </table>
+                <select name="class">
+                    <option value="">Search Class</option>
+                    <?php while ($class = mysqli_fetch_assoc($classes_result)): ?>
+                        <option value="<?php echo $class['class_id']; ?>" <?php echo ($class_filter == $class['class_id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($class['class_name']); ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
 
-    <!-- Button Below the Table -->
-    <div class="button-container">
-        <button class="add-course" onclick="location.href='admin_course_insertform.php'">Add Course</button>
-    </div>
+                <button type="submit">Apply</button>
+            </form>
+        </section>
+
+        <!-- Container for Course Cards -->
+        <section class="courses-container">
+            <div class="courses">
+                <?php foreach ($courses as $course): ?>
+                    <a href="view_course.php?course_id=<?php echo urlencode($course['course_id']); ?>" class="course-card-link">
+                        <div class="course-card">
+                            <h3><?php echo htmlspecialchars($course['course_name']); ?></h3>
+                            <p>Department: <?php echo htmlspecialchars($course['department_name']); ?></p>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <!-- Button container for "Add Course" -->
+        <section class="add-course-btn-container">
+            <a href="course_insertform.php" class="add-course-btn">Add New Course</a>
+        </section>
+
+    </main>
 
 </body>
 

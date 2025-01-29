@@ -6,19 +6,24 @@ include 'db_connection.php';
 session_start();
 
 // Check if the user is logged in
-if (!isset($_SESSION['session_role'])) {
-  // If no session role is set, redirect to login page
-  header("Location: login.php");
-  exit;
+if (!isset($_SESSION['session_roleid'])) {
+    // If no session role is set, redirect to login page
+    header("Location: login.php");
+    exit;
 }
 
-// Check if the user has admin privileges
-if ($_SESSION['session_role'] != 1) { // 1 = Admin
-  // If the user is not an admin, show an unauthorized error or redirect
-  header("Location: unauthorized.php"); // Redirect to an unauthorized page
-  exit;
+// Check if the user has admin or faculty privileges
+if ($_SESSION['session_roleid'] != 1 && $_SESSION['session_roleid'] != 2) {
+    // If the user is not an admin or faculty, redirect to an unauthorized page or show an error
+    if ($_SESSION['session_roleid'] == 3) {
+        // Store an error message for students
+        $_SESSION['error_message'] = "Students should not be on this page.";
+    }
+    header("Location: unauthorized.php"); // Redirect to an unauthorized page
+    exit;
 }
 
+// If the user is an admin or faculty, continue loading the admin dashboard
 ?>
 
 <!DOCTYPE html>

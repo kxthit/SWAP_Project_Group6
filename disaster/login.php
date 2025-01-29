@@ -2,17 +2,22 @@
 // Include database connection
 include_once 'db_connection.php';
 
-$error_message = '';
-
+// Start session
+session_start();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $form_admission_no = htmlspecialchars($_POST['admission_number']);
-    $form_password = htmlspecialchars($_POST['hashed_password']);
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die('Invalid CSRF token.');
+    }
+
+    // Retrieve and sanitize inputs
+    $form_admission_no = filter_var($_POST['admission_number'], FILTER_SANITIZE_STRING);
+    $form_password = $_POST['hashed_password'];
 
     // Check for empty fields
     if (empty($form_admission_no) || empty($form_password)) {
-        $error_message = "Both admission number or password cannot be empty. Please try again.";
+        $error_message = "Admission number or password cannot be empty.";
     } else {
-        
         // Prepare the statement
         $stmt = mysqli_prepare($conn, "SELECT * FROM user WHERE admission_number = ?");
         mysqli_stmt_bind_param($stmt, 's', $form_admission_no);
@@ -24,61 +29,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Check if user exists
         if (!$row) {
-            $error_message = "No such user. Please try again.";
+            // Error message for invalid admission number
+            $error_message = "Invalid credentials. Please try again.";
         } else {
             // Verify password
             if (!password_verify($form_password, $row['hashed_password'])) {
-                echo "<script>alert('Incorrect password. Please try again.');</script>";
+                // Error message for incorrect password
+                $error_message = "Invalid credentials. Please try again.";
             } else {
-                // Start session and set session variables
-                session_start();
+                // Regenerate session ID for security
+                session_regenerate_id(true);
+
+                // Store user data in session
                 $_SESSION['session_userid'] = $row['user_id'];
-                $_SESSION['session_role'] = $row['role_id'];
+                $_SESSION['session_roleid'] = $row['role_id'];
 
-                // Fetch role-specific data and redirect page
-                $role_table = '';
-                $role_column = '';
-                $redirect = '';
+                // Role-based redirection
+                $roles = [
+                    3 => ['table' => 'student', 'column' => 'student_name', 'redirect' => 'student_dashboard.php'],
+                    1 => ['table' => 'admin', 'column' => 'admin_name', 'redirect' => 'access_key_form.php'],
+                    2 => ['table' => 'faculty', 'column' => 'faculty_name', 'redirect' => 'access_key_form.php'],
+                ];
 
-                switch ($row['role_id']) {
-                    case 3: // Student
-                        $role_table = 'student';
-                        $role_column = 'student_name';
-                        $redirect = 'student_dashboard.php';
-                        break;
-                    case 1: // Admin
-                        $role_table = 'admin';
-                        $role_column = 'admin_name';
-                        $redirect = 'access_key_form.php';
-                        break;
-                    case 2: // Faculty
-                        $role_table = 'faculty';
-                        $role_column = 'faculty_name';
-                        $redirect = 'access_key_form.php';
-                        break;
-                    default:
-                        $error_message = "Invalid role. Please contact the administrator.";
-                        break;
-                }
+                if (array_key_exists($row['role_id'], $roles)) {
+                    $role = $roles[$row['role_id']];
 
-                if (empty($error_message)) {
-                    // Prepare the query to fetch the name from the respective table
-                    $stmt = mysqli_prepare($conn, "SELECT $role_column FROM $role_table WHERE user_id = ?");
+                    // Fetch name from respective table
+                    $stmt = mysqli_prepare($conn, "SELECT {$role['column']} FROM {$role['table']} WHERE user_id = ?");
                     mysqli_stmt_bind_param($stmt, 'i', $row['user_id']);
                     mysqli_stmt_execute($stmt);
                     $result = mysqli_stmt_get_result($stmt);
                     $role_data = mysqli_fetch_assoc($result);
 
                     // Store the name in session
-                    $_SESSION['session_name'] = $role_data[$role_column];
+                    $_SESSION['session_name'] = htmlspecialchars($role_data[$role['column']], ENT_QUOTES, 'UTF-8');
 
                     // Redirect user
-                    header("Location: $redirect");
+                    header("Location: " . $role['redirect']);
                     exit;
+                } else {
+                    $error_message = "Invalid role. Please contact the administrator.";
                 }
             }
         }
     }
+
+    // Store error message in session and redirect to login form
+    if (!empty($error_message)) {
+        $_SESSION['error_message'] = $error_message;
+        header("Location: loginform.php");
+        exit;
+    }
 }
 ?>
+
 <?php include('loginform.php'); // Include the form here ?>

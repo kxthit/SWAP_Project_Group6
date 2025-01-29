@@ -1,58 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Header Example</title>
-    <link rel="stylesheet" href="style.css"> <!-- Link to your CSS -->
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="css/admin_header.css">
 </head>
+
 <body>
+        <!-- Header Section -->
+        <header>
+            <div class="logo">
+                <img src="image/logo-main.png" alt="Logo">
+            </div>
+            <div class="user-info">
+                <div class="profile">
+                    <div class="user-details">
+                        <p class="user-name"><?php echo htmlspecialchars($_SESSION['session_name'] ?? 'Guest'); ?></p>
+                        <p class="user-role">
+                            <?php
+                            switch ($_SESSION['session_roleid'] ?? '') {
+                                case 1:
+                                    echo 'Admin';
+                                    break;
+                                case 2:
+                                    echo 'Faculty';
+                                    break;
+                                case 3:
+                                    echo 'Student';
+                                    break;
+                                default:
+                                    echo 'Unknown Role';
+                                    break;
+                            }
+                            ?>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-    <!-- header.php -->
-    <header>
-      <div class="logo"></div>
-      <div class="user-info">
-        <!-- Profile Picture -->
-        <div class="profile">
+        <!-- Navbar Section -->
+        <nav class="navbar">
+            <ul>
+                <li><a href="admin_dashboard.php">Dashboard</a></li>
+                <li><a href="student.php">Students</a></li>
+                <li><a href="classes.php">Classes</a></li>
+                <li><a href="courses.php">Courses</a></li>
+                <li><a href="grades.php">Grades</a></li>
+            </ul>
+        </nav>
 
-        <!-- User Details -->
-          <div class="user-details">
-            <p class="user-name"><?php echo htmlspecialchars($_SESSION['session_name'] ?? 'Guest'); ?></p>
-            <p class="user-role">
-              <?php 
-                // Determine role based on session_role
-                switch ($_SESSION['session_role'] ?? '') {
-                  case 1: echo 'Admin'; break;
-                  case 2: echo 'Faculty'; break;
-                  case 3: echo 'Student'; break;
-                  default: echo 'Unknown Role'; break;
-                } 
-              ?>
-            </p>
-          </div>
-        </div> 
-      </div>
-    </header>
+    </div> <!-- End of page-container -->
 
-
-
-    <div class="container">
-      <aside class="sidebar">
-        <p>MAIN MENU</p>
-        <ul>
-          <li><a href="admin_dashboard.php">Dashboard</a></li>
-          <li><a href="student.php">Students</a></li>
-          <li>Classes</li>
-          <li><a href="courses.php">Courses</a></li>
-          <li>Grades</li>
-        </ul>
-        <p>SETTINGS</p>
-        <ul>
-          <li>Profile</li>
-          <li>Setting</li>
-          <li>Logout</li>
-        </ul>
-      </aside>
-    
-</body> 
+</body>
 </html>
