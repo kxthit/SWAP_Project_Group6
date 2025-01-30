@@ -162,15 +162,11 @@ if ($_SESSION['session_roleid'] == 2) {
             return true;
         }
 
-            function unsetSessionAndReturn() {
-            // Unset the session data for course_data
-            <?php 
-                unset($_SESSION['course_data']); // Unset the session data in PHP
-            ?>
-            
-            // Redirect to the view_course.php page
-            window.location.href = 'view_course.php';
-        }
+            // Function to clear session data and redirect back to courses.php
+        function unsetSessionAndReturn() {
+        // Redirect with clear_session flag in the URL
+        window.location.href = "course_insertform.php?clear_session=true";
+    }
     </script>
 </head>
 <body>
