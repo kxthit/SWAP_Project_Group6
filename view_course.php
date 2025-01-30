@@ -142,7 +142,28 @@ if (!$courseDetails) {
         <p><strong>End Date:</strong> <?php echo htmlspecialchars($courseDetails['end_date']); ?></p>
         
         <!-- Status Box -->
-        <div class="status-box <?php echo htmlspecialchars($courseDetails['status_name']); ?>">
+        <div class="status-box 
+            <?php
+            // Map the status_id to specific classes for color changes
+            switch ($courseDetails['status_id']) {
+                case 1:
+                    echo 'Started'; // Green
+                    break;
+                case 2:
+                    echo 'In-Progress'; // Darker Yellow
+                    break;
+                case 3:
+                    echo 'Ended'; // Red
+                    break;
+                case 4:
+                    echo 'Unassigned'; // Grey
+                    break;
+                default:
+                    echo 'Unknown'; // Default class for unknown statuses
+                    break;
+            }
+            ?>
+        ">
             <?php echo htmlspecialchars($courseDetails['status_name']); ?>
         </div>
         

@@ -89,6 +89,38 @@ header {
     color: white;
 }
 
+.status-box {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.status-box.Started {
+    background-color: #28a745; /* Green */
+}
+
+.status-box.In-Progress {
+    background-color: #ffc107; /* Darker Yellow */
+    color: black; /* Dark text for better readability */
+}
+
+.status-box.Ended {
+    background-color: #dc3545; /* Red */
+}
+
+.status-box.Unassigned {
+    background-color: #6c757d; /* Grey */
+}
+
+.status-box.Unknown {
+    background-color: #bbb; /* Default color for unknown status */
+}
+
 .btn-container {
     display: flex;
     justify-content: center;
