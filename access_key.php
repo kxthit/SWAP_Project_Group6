@@ -1,7 +1,8 @@
 <?php
-// Include database connection
+// Include database connection and session management
 include_once 'db_connection.php';
-session_start();
+include 'session_management.php';
+
 
 // Check if the user is logged in
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
@@ -10,31 +11,35 @@ if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) 
     exit;
 }
 
-// Validate CSRF token
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        $_SESSION['error_message'] = "Invalid CSRF token.";
+    // Debug: Check CSRF token
+    if (!isset($_POST['csrf_token'])) {
+        die('CSRF token missing in the form.');
+    }
+    if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die('CSRF token mismatch. Debug: ' . $_POST['csrf_token'] . ' != ' . $_SESSION['csrf_token']);
+    }
+
+    // Regenerate CSRF token to prevent reuse
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+    // Retrieve and sanitize the access key input
+    $user_id = $_SESSION['session_userid'];
+    $role_id = $_SESSION['session_roleid'];
+    $access_key = filter_var($_POST['access_key'] ?? '', FILTER_SANITIZE_STRING);
+
+    // Debug: Check access key in POST
+    echo 'Access Key in POST: ' . ($_POST['access_key'] ?? 'Not set') . '<br>';
+
+    // Check for empty access key
+    if (empty($access_key)) {
+        $_SESSION['error_message'] = "Access key cannot be empty.";
         header('Location: access_key_form.php');
         exit;
     }
-    // Regenerate CSRF token to prevent reuse
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
-// Retrieve and sanitize inputs
-$user_id = $_SESSION['session_userid'];
-$role_id = $_SESSION['session_roleid'];
-$access_key = filter_var($_POST['access_key'] ?? '', FILTER_SANITIZE_STRING);
-
-// Check for empty fields
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($access_key)) {
-    $_SESSION['error_message'] = "Access key cannot be empty.";
-    header('Location: access_key_form.php');
-    exit;
-}
-
-// Handle role-specific logic using a switch statement
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle role-specific logic using a switch statement
     $role_table = '';
     $role_column = '';
     $redirect = '';
@@ -48,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 2: // Faculty
             $role_table = 'faculty';
             $role_column = 'faculty_name';
-            $redirect = 'admin_dashboard.php';
+            $redirect = 'faculty_dashboard.php';
             break;
         default:
             $_SESSION['error_message'] = "Invalid role. Please contact the administrator.";
@@ -56,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
     }
 
-    // Validate table and column names
+    // Validate table and column names (whitelist validation)
     $allowed_tables = ['admin', 'faculty'];
     $allowed_columns = ['admin_name', 'faculty_name'];
 
@@ -66,36 +71,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Prepare and execute the SQL query
+    // Prepare and execute the SQL query to validate the access key
     $stmt = $conn->prepare("SELECT {$role_table}_access_key, {$role_column}, profile_picture FROM {$role_table} WHERE user_id = ?");
     $stmt->bind_param('i', $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result->fetch_assoc();
 
-    // Check access key and role data
+    // Debug: Check access key in database
+    echo 'Access Key from DB: ' . ($row["{$role_table}_access_key"] ?? 'Not set') . '<br>';
+    echo 'Access Key Entered: ' . $access_key . '<br>';
+
+    // Validate access key
     if ($row && $row["{$role_table}_access_key"] === $access_key) {
         // Regenerate session ID for security
         session_regenerate_id(true);
 
-        // Store user data in session
+        // Store user details in session
         $_SESSION['session_name'] = htmlspecialchars($row[$role_column], ENT_QUOTES, 'UTF-8');
         $_SESSION['profile_picture'] = $row['profile_picture'] ?? 'default_profile.png';
 
-        // Fetch the faculty_id for role_id == 2 (Faculty)
-        if ($role_id == 2) {
-            $faculty_stmt = $conn->prepare("SELECT faculty_id FROM faculty WHERE user_id = ?");
-            $faculty_stmt->bind_param('i', $user_id);
-            $faculty_stmt->execute();
-            $faculty_result = $faculty_stmt->get_result();
-            $faculty_row = $faculty_result->fetch_assoc();
-
-            if ($faculty_row) {
-                $_SESSION['session_facultyid'] = $faculty_row['faculty_id'];
-            }
-        }
-
-        // Redirect user
+        // Redirect to the dashboard
         header("Location: {$redirect}");
         exit;
     } else {
