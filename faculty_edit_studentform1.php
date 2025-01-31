@@ -12,7 +12,7 @@ if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_role'])) {
 }
 
 // Restrict access to only Admins and Faculty
-if ($_SESSION['session_role'] !== 1) {
+if ($_SESSION['session_role'] !== 2) {
     echo "<h2>Unauthorized access.</h2>";
     exit;
 }
@@ -20,46 +20,98 @@ if ($_SESSION['session_role'] !== 1) {
 // Initialize error message array
 $errors = [];
 
-// Fetch departments for selection
-$departments = [];
-$stmt = $conn->prepare("SELECT department_id, department_name FROM department");
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $departments[] = $row;
-}
-$stmt->close();
-
-// Fetch existing student details if student_id is provided
+// Faculty Restriction: Ensure faculty can only edit students under their assigned courses
 if (isset($_GET['student_id'])) {
     $student_id = intval($_GET['student_id']);
-    $stmt = $conn->prepare("SELECT student.student_name, student.student_email, student.student_phone, student.department_id, user.user_id, user.admission_number 
-                            FROM student 
-                            JOIN user ON student.user_id = user.user_id 
-                            WHERE student.student_id = ?");
-    $stmt->bind_param('i', $student_id);
+    $session_userid = $_SESSION['session_userid'];
+    $session_role = $_SESSION['session_role'];
+
+    // Get faculty ID
+    $faculty_query = "SELECT faculty_id FROM faculty WHERE user_id = ?";
+    $stmt = $conn->prepare($faculty_query);
+    $stmt->bind_param("i", $session_userid);
     $stmt->execute();
-    $student_result = $stmt->get_result();
+    $faculty_result = $stmt->get_result();
+    
+    if ($faculty_result->num_rows === 0) {
+        die("<h2>Error: Faculty not found.</h2>");
+    }
+    $faculty_row = $faculty_result->fetch_assoc();
+    $faculty_id = $faculty_row['faculty_id'];
+    $stmt->close();
 
-    if ($student_result->num_rows > 0) {
-        $student = $student_result->fetch_assoc();
+    // Get faculty's assigned courses
+    $courses_query = "SELECT course_id FROM faculty_course WHERE faculty_id = ?";
+    $stmt = $conn->prepare($courses_query);
+    $stmt->bind_param("i", $faculty_id);
+    $stmt->execute();
+    $courses_result = $stmt->get_result();
 
-        // Store all student data including student_id in the session
-        $_SESSION['student_data'] = [
-            'student_id' => $student_id,
-            'user_id' => $student['user_id'],
-            'student_name' => $student['student_name'],
-            'admission_number' => $student['admission_number'],
-            'student_email' => $student['student_email'],
-            'student_phone' => $student['student_phone'],
-            'department_id' => $student['department_id'],
-        ];
-    } else {
-        error_log("Student ID $student_id not found - " . date('Y-m-d H:i:s') . "\n", 3, 'error_log.txt');
-        echo "<h2>An error occurred. Please try again later.</h2>";
-        exit;
+    $faculty_courses = [];
+    while ($course_row = $courses_result->fetch_assoc()) {
+        $faculty_courses[] = $course_row['course_id'];
     }
     $stmt->close();
+
+    // Ensure the student is in one of the faculty's courses
+    if (count($faculty_courses) > 0) {
+        $placeholders = implode(',', array_fill(0, count($faculty_courses), '?'));
+        $student_course_query = "
+            SELECT sc.course_id 
+            FROM student_course sc
+            WHERE sc.student_id = ? AND sc.course_id IN ($placeholders)
+        ";
+
+        $stmt = $conn->prepare($student_course_query);
+        $stmt->bind_param(str_repeat('i', count($faculty_courses) + 1), $student_id, ...$faculty_courses);
+        $stmt->execute();
+        $student_course_result = $stmt->get_result();
+
+        // Deny access if student is not in faculty's courses
+        if ($student_course_result->num_rows === 0) {
+            die("<h2>Unauthorized access. This student is not in your assigned courses.</h2>");
+        }
+        $stmt->close();
+    } else {
+        die("<h2>You have no assigned courses.</h2>");
+    }
+
+    // Fetch student details including department
+    $stmt = $conn->prepare("
+        SELECT 
+            s.student_name, 
+            s.student_email, 
+            s.student_phone, 
+            s.department_id, 
+            d.department_name, 
+            u.user_id, 
+            u.admission_number
+        FROM student s
+        JOIN user u ON s.user_id = u.user_id
+        JOIN department d ON s.department_id = d.department_id
+        WHERE s.student_id = ?
+    ");
+    $stmt->bind_param("i", $student_id);
+    $stmt->execute();
+    $student_result = $stmt->get_result();
+    $stmt->close();
+
+    if ($student_result->num_rows === 0) {
+        die("<h2>Error: Student not found.</h2>");
+    }
+    $student = $student_result->fetch_assoc();
+
+    // Store student data in session
+    $_SESSION['student_data'] = [
+        'student_id' => $student_id,
+        'user_id' => $student['user_id'],
+        'student_name' => $student['student_name'],
+        'admission_number' => $student['admission_number'],
+        'student_email' => $student['student_email'],
+        'student_phone' => $student['student_phone'],
+        'department_id' => $student['department_id'],
+        'department_name' => $student['department_name'], // Store department name for display
+    ];
 }
 
 // Handle form submission for student update
@@ -116,9 +168,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'admission_number' => htmlspecialchars($admission_number),
             'student_email' => htmlspecialchars($student_email),
             'student_phone' => htmlspecialchars($student_phone),
-            'department_id' => htmlspecialchars($department_id),
+            'department_id' => $_SESSION['student_data']['department_id'],
+            'department_name' => $_SESSION['student_data']['department_name'],
         ];
-        header('Location: edit_student_courseform.php');
+        header('Location: faculty_edit_student_course.php');
         exit;
     }
 }
@@ -315,7 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </ul>
                     </div>
                 <?php endif; ?>
-                <form action="edit_studentform1.php" method="POST">
+                <form action="faculty_edit_studentform1.php" method="POST">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <!-- Form fields here (same as before, including value retention) -->
                     <!-- Row with Photo and Table -->
@@ -344,16 +397,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </tr>
                             <tr>
                                 <td colspan="2">
-                                    <label for="department_id">Department *</label>
-                                    <select id="department_id" name="department_id" required>
-                                        <option value="">Select Department</option>
-                                        <?php foreach ($departments as $department): ?>
-                                            <option value="<?= $department['department_id'] ?>"
-                                                <?= (($_POST['department_id'] ?? $_SESSION['student_data']['department_id'] ?? '') == $department['department_id']) ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($department['department_name']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                    <label>Department *</label>
+                                    <input type="text" value="<?= htmlspecialchars($_SESSION['student_data']['department_name']) ?>" readonly>
+                                    <input type="hidden" name="department_id" value="<?= htmlspecialchars($_SESSION['student_data']['department_id']) ?>">
                                 </td>
                             </tr>
                         </table>
