@@ -1,19 +1,17 @@
 <?php
-// Include the database connection
+include('session_management.php');
 include 'db_connection.php';
-
-session_start();
 
 // Check if the user is authenticated
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
+    // Use JavaScript redirect if the user is unauthorized
     echo "<script>
-            alert('Unauthorized user. Redirecting To Login.');
-            window.location.href = 'login.php'; // Redirect to homepage or any page you want
+            alert('Unauthorized user. Redirecting to login.');
+            window.location.href = 'login.php'; // Redirect to login page
           </script>";
-    exit;
+    exit;  // After this, exit to stop further code execution
 }
 
-// Get role and user ID from session
 $role_id = $_SESSION['session_roleid']; // Get role ID from the session
 $user_id = $_SESSION['session_userid']; // Get user ID from the session
 
@@ -39,9 +37,9 @@ if ($role_id == 2) {
 }
 
 // Build the SQL query dynamically based on user input for search and filters
-$search_term = isset($_GET['search']) ? $_GET['search'] : '';
-$department_filter = isset($_GET['department']) ? $_GET['department'] : '';
-$class_filter = isset($_GET['class']) ? $_GET['class'] : '';
+$search_term = isset($_POST['search']) ? $_POST['search'] : '';
+$department_filter = isset($_POST['department']) ? $_POST['department'] : '';
+$class_filter = isset($_POST['class']) ? $_POST['class'] : '';
 
 // Initialize params array with search term (for LIKE query)
 $params = ["%$search_term%"]; // Start with search term for LIKE query
@@ -135,8 +133,7 @@ if ($role_id == 1) {
     $departments_query = "
         SELECT department.department_id, department.department_name
         FROM department
-        WHERE department.department_id = ?
-    ";
+        WHERE department.department_id = ?";
 }
 
 $departments_stmt = $conn->prepare($departments_query);
@@ -157,8 +154,7 @@ if ($role_id == 1) {
         FROM class
         INNER JOIN faculty_course ON class.course_id = faculty_course.course_id
         INNER JOIN faculty ON faculty_course.faculty_id = faculty.faculty_id
-        WHERE faculty.user_id = ?
-    ";
+        WHERE faculty.user_id = ?";
 }
 
 $classes_stmt = $conn->prepare($classes_query);
@@ -167,12 +163,12 @@ if ($role_id == 2) {
 }
 $classes_stmt->execute();
 $classes_result = $classes_stmt->get_result();
-
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -182,14 +178,9 @@ $classes_result = $classes_stmt->get_result();
 </head>
 
 <body>
-
-    <?php
-    
-    include('admin_header.php'); ?>
-
+<?php include('admin_header.php') ;?>
     <main class="main-content">
-
-    <p class="page-title">Courses</p>
+        <p class="page-title">Courses</p>
 
         <!-- Filters Section -->
         <section class="filters">
@@ -234,11 +225,10 @@ $classes_result = $classes_stmt->get_result();
 
         <!-- Button container for "Add Course" -->
         <section class="add-course-btn-container">
-            <a href="course_insertform.php" class="add-course-btn">Add New Course</a>
+                <button type="submit" name="add_course" class="add-course-btn">Add New Course</button>
         </section>
-
     </main>
-
 </body>
-
 </html>
+
+

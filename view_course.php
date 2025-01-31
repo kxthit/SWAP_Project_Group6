@@ -1,6 +1,5 @@
-<?php 
-session_start();
-
+<?php
+include('session_management.php');
 include("db_connection.php");
 
 // Check if the user is authenticated
@@ -10,16 +9,16 @@ if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) 
     exit;
 }
 
-// Check if the user is either Admin or Faculty (role_id 1 or 2)
+// Check if the user is either Admin or Faculty (role id 1 or 2)
 if ($_SESSION['session_roleid'] != 1 && $_SESSION['session_roleid'] != 2) {
     echo "<h2>You do not have permission to access this page.</h2>";
     exit;
 }
 
-// Skip fetching faculty_id for Admins (role_id 1)
+// Skip fetching faculty_id for Admins (role id 1)
 if ($_SESSION['session_roleid'] == 2 && !isset($_SESSION['session_facultyid'])) {
-    // Only fetch faculty_id if the user is Faculty (role_id 2)
-    $user_id = $_SESSION['session_userid']; // Assuming you store user id in session
+    // Only fetch faculty_id if the user is Faculty (role id 2)
+    $user_id = $_SESSION['session_userid'];
 
     // Query to get faculty_id based on user_id
     $facultyQuery = $conn->prepare("SELECT faculty_id FROM faculty WHERE user_id = ?");
@@ -36,7 +35,13 @@ if ($_SESSION['session_roleid'] == 2 && !isset($_SESSION['session_facultyid'])) 
     }
 }
 
-$faculty_id = ($_SESSION['session_roleid'] == 1) ? null : $_SESSION['session_facultyid']; // If Admin, no faculty_id needed
+if ($_SESSION['session_roleid'] == 1) {
+    // Admin doesn't need a faculty ID
+    $faculty_id = null;
+} else {
+    // Non-admin users will have their faculty ID
+    $faculty_id = $_SESSION['session_facultyid'];
+}
 
 // Check if the course_id is passed in the URL
 if (isset($_GET['course_id'])) {
@@ -107,14 +112,24 @@ $courseResult->execute();
 $courseData = $courseResult->get_result();
 $courseDetails = $courseData->fetch_assoc();
 
-$_SESSION['session_statusid'] = $courseDetails['status_id'];  // Store status_id in session
+$_SESSION['session_coursestatusid'] = $courseDetails['status_id'];  // Store status_id in session
 
 
 // If no course details found
 if (!$courseDetails) {
     echo "<h2>Course details not found.</h2>";
     exit;
-}?>
+}
+
+// If the return button was clicked, clear session data and redirect
+if (isset($_POST['return_button'])) {
+unset($_SESSION['session_coursestatusid']);  // Unset course status
+unset($_SESSION['session_courseid']);
+header("Location: courses.php");
+exit;
+}
+
+?>
 
 <!DOCTYPE html>
 <html>
@@ -130,8 +145,7 @@ if (!$courseDetails) {
 </head>
 
 <body>
-<?php include('admin_header.php'); ?>
-
+<?php include('admin_header.php') ;?>
 <h1 id="title"><?php echo htmlspecialchars($courseDetails['course_name']); ?></h1>
 
 <div class="main-container">
@@ -145,7 +159,7 @@ if (!$courseDetails) {
         <div class="status-box 
             <?php
             // Map the status_id to specific classes for color changes
-            switch ($courseDetails['status_id']) {
+            switch ($_SESSION['session_coursestatusid']) {
                 case 1:
                     echo 'Started'; // Green
                     break;
@@ -169,24 +183,64 @@ if (!$courseDetails) {
         
         <!-- Button Container -->
         <div class="btn-container">
-            <!-- Edit Course button -->
-            <button onclick="location.href='course_updateform.php?course_id=<?php echo htmlspecialchars($_SESSION['session_courseid']); ?>'">
-                <img src="image/edit-button.png" alt="Edit Course" style="width: 40px; height: 40px;">
-            </button>
-            
-            <!-- Back to Course List button -->
-            <button onclick="location.href='courses.php'">
-                <img src="image/back_arrow.png" alt="Back to Course List" style="width: 40px; height: 40px;">
-            </button>
+    <!-- Edit Course button -->
+    <form method="POST">
+        <button type="submit" name="edit_course">
+            <img src="image/edit-button.png" alt="Edit Course" style="width: 40px; height: 40px;">
+        </button>
+    </form>
 
-            <!-- Delete Course Form -->
-            <form action="course_delete.php" method="get" onsubmit="return confirmDelete()">
-                <input type="hidden" name="course_id" value="<?php echo htmlspecialchars($_SESSION['session_courseid']); ?>">
-                <button type="submit">
-                    <img src="image/delete-button.png" alt="Delete Course" style="width: 40px; height: 40px;">
-                </button>
-            </form>
-        </div>
+    <!-- Back to Course List Form -->
+    <form method="post">
+        <button type="submit" name="return_button">
+            <img src="image/back_arrow.png" alt="Back to Course List" style="width: 40px; height: 40px;">
+        </button>
+    </form>
+
+    <!-- Delete Course Form -->
+    <form action="course_delete.php" method="post" onsubmit="return confirmDelete()">
+        <input type="hidden" name="course_id" value="<?php echo htmlspecialchars($_SESSION['session_courseid']); ?>">
+        <button type="submit">
+            <img src="image/delete-button.png" alt="Delete Course" style="width: 40px; height: 40px;">
+        </button>
+    </form>
+</div>
+
+<?php
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Check if the "edit_course" button was pressed
+    if (isset($_POST['edit_course'])) {
+        // Ensure session_roleid is set and valid
+        if (isset($_SESSION['session_roleid'])) {
+            switch ($_SESSION['session_roleid']) {
+                case 1: // Admin
+                    // Admin redirects to the course admin update form
+                    header('Location: course_admin_update_form.php?course_id=' . urlencode($_SESSION['session_courseid']));
+                    exit;
+                case 2: // Faculty
+                    // Faculty redirects to the course update form
+                    header('Location: course_update_form.php?course_id=' . urlencode($_SESSION['session_courseid']));
+                    exit;
+                default:
+                    // Handle unexpected role case
+                    echo "Invalid role. Cannot redirect.";
+                    exit;
+            }
+        } else {
+            echo "Session role ID not set.";
+            exit;
+        }
+    }
+
+    // Handle the return button
+    if (isset($_POST['return_button'])) {
+        // Redirect to courses page
+        header('Location: courses.php');
+        exit;
+    }
+}
+
+?>
     </div>
 </div>
 </body>

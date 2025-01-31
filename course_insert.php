@@ -1,6 +1,5 @@
 <?php
-session_start();
-
+include('session_management.php');
 include('db_connection.php');
 
 // Check authentication
@@ -15,6 +14,14 @@ if ($_SESSION['session_roleid'] != 1 && $_SESSION['session_roleid'] != 2) {
     echo "<h2>You do not have permission to access this page.</h2>";
     exit;
 }
+
+// Check if the user is either Admin or Faculty (role_id 1 or 2)
+if ($_SESSION['session_roleid'] == 1) {
+    echo "<h2> How can you insert a course without the details first?</h2>";
+    header('Refresh: 3; course_insert_form.php');
+    exit;
+}
+
 // Get the user_id from the session
 $user_id = $_SESSION['session_userid'];
 
@@ -49,6 +56,13 @@ if ($_SESSION['session_roleid'] == 2) {
     exit;
 }
 
+// If the return button was clicked, clear session data and redirect
+if (isset($_POST['return_button'])) {
+    unset($_SESSION['course_data']); // Clear session data
+    header("Location: courses.php");
+    exit;
+}
+
 // Initialize errors array
 $errors = [];
 
@@ -66,61 +80,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Store the form data in session for repopulation
     $_SESSION['course_data'] = $_POST;
 
-    // Validate form fields
     if (empty($course_name)) {
-        $errors[] = "Course name is required.";
+        $_SESSION['error_message'] = "Course name is required.";
     } elseif (strlen($course_name) > 100) {
-        $errors[] = "Course name must be between 1 and 100 characters.";
+        $_SESSION['error_message'] = "Course name must be between 1 and 100 characters.";
+    } elseif (strlen($course_code) !== 7) {
+        $_SESSION['error_message'] = "Course code must be exactly 7 characters.";
+    } elseif ($start_date >= $end_date) {
+        $_SESSION['error_message'] = "Start date must be earlier than end date.";
+    } elseif (empty($course_code) || empty($start_date) || empty($end_date) || empty($status_id) || empty($department_id)) {
+        $_SESSION['error_message'] = "All fields are required.";
+    } else {
+        // Check if the course name already exists in the database
+        $check_name_query = "SELECT * FROM course WHERE course_name = ?";
+        $check_name_stmt = $conn->prepare($check_name_query);
+        $check_name_stmt->bind_param('s', $course_name);
+        $check_name_stmt->execute();
+        $check_name_result = $check_name_stmt->get_result();
+    
+        if ($check_name_result->num_rows > 0) {
+            $_SESSION['error_message'] = "A course with the same name already exists.";
+        } else {
+            // Check if the course code already exists in the database
+            $check_code_query = "SELECT * FROM course WHERE course_code = ?";
+            $check_code_stmt = $conn->prepare($check_code_query);
+            $check_code_stmt->bind_param('s', $course_code);
+            $check_code_stmt->execute();
+            $check_code_result = $check_code_stmt->get_result();
+    
+            if ($check_code_result->num_rows > 0) {
+                $_SESSION['error_message'] = "A course with the same course code already exists.";
+            }
+        }
     }
-
-    if (strlen($course_code) !== 7) {
-        $errors[] = "Course code must be exactly 7 characters.";
-    }
-
-    if ($start_date >= $end_date) {
-        $errors[] = "Start date must be earlier than end date.";
-    }
-
-    if (empty($course_name) || empty($course_code) || empty($start_date) || empty($end_date) || empty($status_id) || empty($department_id)) {
-        $errors[] = "All fields are required.";
-    }
-
-    // If there are validation errors, store them in the session and redirect back to the form
-    if (!empty($errors)) {
-        $_SESSION['error_message'] = $errors;  // Store errors in session
-        header('Location: course_insertform.php');  // Redirect back to the form
+    
+    // If an error is set, redirect to the form
+    if (isset($_SESSION['error_message'])) {
+        header('Location: course_insert_form.php');
         exit;
-    }
-
-    // Check if the course name already exists in the database
-    $check_name_query = "SELECT * FROM course WHERE course_name = ?";
-    $check_name_stmt = $conn->prepare($check_name_query);
-    $check_name_stmt->bind_param('s', $course_name);
-    $check_name_stmt->execute();
-    $check_name_result = $check_name_stmt->get_result();
-
-    if ($check_name_result->num_rows > 0) {
-        $errors[] = "A course with the same name already exists.";
-    }
-
-    // Check if the course code already exists in the database
-    $check_code_query = "SELECT * FROM course WHERE course_code = ?";
-    $check_code_stmt = $conn->prepare($check_code_query);
-    $check_code_stmt->bind_param('s', $course_code);
-    $check_code_stmt->execute();
-    $check_code_result = $check_code_stmt->get_result();
-
-    if ($check_code_result->num_rows > 0) {
-        $errors[] = "A course with the same course code already exists.";
-    }
-
-    // If there are any errors, store them in the session and redirect back to the form
-    if (!empty($errors)) {
-        $_SESSION['error_message'] = $errors;  // Store errors in session
-        $_SESSION['course_data'] = $_POST;  // Store form data in session for repopulation
-        header('Location: course_insertform.php');  // Redirect back to the form
-        exit;
-    }
+    }    
 
     // If no errors, proceed with course insertion into the database
     $insert_query = "INSERT INTO course (course_name, course_code, start_date, end_date, status_id, department_id)

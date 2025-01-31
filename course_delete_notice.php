@@ -1,5 +1,6 @@
 <?php
-session_start();
+include('session_management.php');
+include('db_connection.php');
 ?>
 
 <!DOCTYPE html>
