@@ -1,5 +1,9 @@
 <?php
-session_start();
+// Start the session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Generate a CSRF token if it doesn't exist
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -10,6 +14,7 @@ $error_message = $_SESSION['error_message'] ?? '';
 
 // Clear the error message after displaying it
 unset($_SESSION['error_message']);
+
 ?>
 
 <!DOCTYPE html>
@@ -17,8 +22,9 @@ unset($_SESSION['error_message']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access Key Verification</title>
+    <title>Login</title>
     <style>
+
 /* Body styles */
 body {
     font-family: Arial, sans-serif;
@@ -163,7 +169,6 @@ button:active {
     </style>
 </head>
 <body>
-
     <div class="login-container">
         <!-- Left section -->
         <div class="left">
@@ -172,28 +177,28 @@ button:active {
         
         <!-- Right section -->
         <div class="right">
-            <h2>Access Key Verification</h2>
-            <!-- Display Error Message -->
-            <?php if (!empty($error_message)): ?>
-                <div class="error-message">
-                    <?php echo htmlspecialchars($error_message, ENT_QUOTES, 'UTF-8'); ?>
-                </div>
-            <?php endif; ?>
-
-            <form action="access_key.php" method="POST">
+            <h2>Login Page</h2>
+            <form action="login.php" method="POST">
                 <!-- CSRF Token -->
                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                
-                <div class="form-group">
-                    <label for="access_key"></label>
-                    <input type="password" id="access_key" name="access_key" placeholder="Enter Access Key" required>
-                </div>
-                <div>
-                    <button type="submit">Submit</button>
+                <?php if (!empty($error_message)): ?>
+                    <div class="error-message">
+                        <?php echo htmlspecialchars($error_message, ENT_QUOTES, 'UTF-8'); ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Other form fields -->
+                <div class="form-content">
+                    <div class="form-group">
+                        <input type="text" id="admission_number" name="admission_number" placeholder="Enter Admission no." required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="hashed_password" name="hashed_password" placeholder="Enter Password" required>
+                    </div>
+                    <button type="submit">LOGIN</button>
                 </div>
             </form>
         </div>
     </div>
-
 </body>
 </html>

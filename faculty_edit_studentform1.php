@@ -4,115 +4,128 @@
 include 'db_connection.php';
 include 'session_management.php';
 
+$error_message = "";
+
 // Check if the user is authenticated
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_role'])) {
-    echo "<h2>Unauthorized access. Please log in.</h2>";
+    $error_message= "Unauthorized access. Please log in.";
     header('Refresh: 3; URL=login.php');
     exit;
 }
 
 // Restrict access to only Admins and Faculty
 if ($_SESSION['session_role'] !== 2) {
-    echo "<h2>Unauthorized access.</h2>";
+    $error_message= "Unauthorized access.";
     exit;
+}
+
+// Handle `student_id` securely
+if (isset($_GET['student_id']) && is_numeric($_GET['student_id'])) {
+    $_SESSION['session_studentid'] = intval($_GET['student_id']); // Store in session
+    header("Location: faculty_edit_studentform1.php"); // Redirect to remove `student_id` from the URL
+    exit();
+}
+
+// Ensure student_id is available
+if (!isset($_SESSION['session_studentid'])) {
+    die("Invalid or missing student ID.");
 }
 
 // Initialize error message array
 $errors = [];
 
 // Faculty Restriction: Ensure faculty can only edit students under their assigned courses
-if (isset($_GET['student_id'])) {
-    $student_id = intval($_GET['student_id']);
-    $session_userid = $_SESSION['session_userid'];
-    $session_role = $_SESSION['session_role'];
+$student_id = $_SESSION['session_studentid'];
+$session_userid = $_SESSION['session_userid'];
+$session_role = $_SESSION['session_role'];
 
-    // Get faculty ID
-    $faculty_query = "SELECT faculty_id FROM faculty WHERE user_id = ?";
-    $stmt = $conn->prepare($faculty_query);
-    $stmt->bind_param("i", $session_userid);
-    $stmt->execute();
-    $faculty_result = $stmt->get_result();
-    
-    if ($faculty_result->num_rows === 0) {
-        die("<h2>Error: Faculty not found.</h2>");
-    }
-    $faculty_row = $faculty_result->fetch_assoc();
-    $faculty_id = $faculty_row['faculty_id'];
-    $stmt->close();
 
-    // Get faculty's assigned courses
-    $courses_query = "SELECT course_id FROM faculty_course WHERE faculty_id = ?";
-    $stmt = $conn->prepare($courses_query);
-    $stmt->bind_param("i", $faculty_id);
-    $stmt->execute();
-    $courses_result = $stmt->get_result();
+// Get faculty ID
+$faculty_query = "SELECT faculty_id FROM faculty WHERE user_id = ?";
+$stmt = $conn->prepare($faculty_query);
+$stmt->bind_param("i", $session_userid);
+$stmt->execute();
+$faculty_result = $stmt->get_result();
 
-    $faculty_courses = [];
-    while ($course_row = $courses_result->fetch_assoc()) {
-        $faculty_courses[] = $course_row['course_id'];
-    }
-    $stmt->close();
-
-    // Ensure the student is in one of the faculty's courses
-    if (count($faculty_courses) > 0) {
-        $placeholders = implode(',', array_fill(0, count($faculty_courses), '?'));
-        $student_course_query = "
-            SELECT sc.course_id 
-            FROM student_course sc
-            WHERE sc.student_id = ? AND sc.course_id IN ($placeholders)
-        ";
-
-        $stmt = $conn->prepare($student_course_query);
-        $stmt->bind_param(str_repeat('i', count($faculty_courses) + 1), $student_id, ...$faculty_courses);
-        $stmt->execute();
-        $student_course_result = $stmt->get_result();
-
-        // Deny access if student is not in faculty's courses
-        if ($student_course_result->num_rows === 0) {
-            die("<h2>Unauthorized access. This student is not in your assigned courses.</h2>");
-        }
-        $stmt->close();
-    } else {
-        die("<h2>You have no assigned courses.</h2>");
-    }
-
-    // Fetch student details including department
-    $stmt = $conn->prepare("
-        SELECT 
-            s.student_name, 
-            s.student_email, 
-            s.student_phone, 
-            s.department_id, 
-            d.department_name, 
-            u.user_id, 
-            u.admission_number
-        FROM student s
-        JOIN user u ON s.user_id = u.user_id
-        JOIN department d ON s.department_id = d.department_id
-        WHERE s.student_id = ?
-    ");
-    $stmt->bind_param("i", $student_id);
-    $stmt->execute();
-    $student_result = $stmt->get_result();
-    $stmt->close();
-
-    if ($student_result->num_rows === 0) {
-        die("<h2>Error: Student not found.</h2>");
-    }
-    $student = $student_result->fetch_assoc();
-
-    // Store student data in session
-    $_SESSION['student_data'] = [
-        'student_id' => $student_id,
-        'user_id' => $student['user_id'],
-        'student_name' => $student['student_name'],
-        'admission_number' => $student['admission_number'],
-        'student_email' => $student['student_email'],
-        'student_phone' => $student['student_phone'],
-        'department_id' => $student['department_id'],
-        'department_name' => $student['department_name'], // Store department name for display
-    ];
+if ($faculty_result->num_rows === 0) {
+    $error_message = "Error: Faculty not found.";
 }
+$faculty_row = $faculty_result->fetch_assoc();
+$faculty_id = $faculty_row['faculty_id'];
+$stmt->close();
+
+// Get faculty's assigned courses
+$courses_query = "SELECT course_id FROM faculty_course WHERE faculty_id = ?";
+$stmt = $conn->prepare($courses_query);
+$stmt->bind_param("i", $faculty_id);
+$stmt->execute();
+$courses_result = $stmt->get_result();
+
+$faculty_courses = [];
+while ($course_row = $courses_result->fetch_assoc()) {
+    $faculty_courses[] = $course_row['course_id'];
+}
+$stmt->close();
+
+// Ensure the student is in one of the faculty's courses
+if (count($faculty_courses) > 0) {
+    $placeholders = implode(',', array_fill(0, count($faculty_courses), '?'));
+    $student_course_query = "
+        SELECT sc.course_id 
+        FROM student_course sc
+        WHERE sc.student_id = ? AND sc.course_id IN ($placeholders)
+    ";
+
+    $stmt = $conn->prepare($student_course_query);
+    $stmt->bind_param(str_repeat('i', count($faculty_courses) + 1), $student_id, ...$faculty_courses);
+    $stmt->execute();
+    $student_course_result = $stmt->get_result();
+
+    // Deny access if student is not in faculty's courses
+    if ($student_course_result->num_rows === 0) {
+        $error_message = "Unauthorized access. This student is not in your assigned courses.";
+    }
+    $stmt->close();
+} else {
+    $error_message = "You have no assigned courses.";
+}
+
+// Fetch student details including department
+$stmt = $conn->prepare("
+    SELECT 
+        s.student_name, 
+        s.student_email, 
+        s.student_phone, 
+        s.department_id, 
+        d.department_name, 
+        u.user_id, 
+        u.admission_number
+    FROM student s
+    JOIN user u ON s.user_id = u.user_id
+    JOIN department d ON s.department_id = d.department_id
+    WHERE s.student_id = ?
+");
+$stmt->bind_param("i", $student_id);
+$stmt->execute();
+$student_result = $stmt->get_result();
+$stmt->close();
+
+if ($student_result->num_rows === 0) {
+    $error_message = "Error: Student not found.";
+}
+$student = $student_result->fetch_assoc();
+
+// Store student data in session
+$_SESSION['student_data'] = [
+    'student_id' => $student_id,
+    'user_id' => $student['user_id'],
+    'student_name' => $student['student_name'],
+    'admission_number' => $student['admission_number'],
+    'student_email' => $student['student_email'],
+    'student_phone' => $student['student_phone'],
+    'department_id' => $student['department_id'],
+    'department_name' => $student['department_name'], // Store department name for display
+];
 
 // Handle form submission for student update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -189,39 +202,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         /* General Reset */
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Source Sans Pro', sans-serif;
+            background-color: #f5f7fc;
             margin: 0;
             padding: 0;
-            background-color: #f5f7fc;
         }
 
         /* Container Styles */
         .form-container {
-            width: 100%;
-            max-width: 1000px;
-            margin: 1rem auto;
-            background-color: #fff;
+            background: #c3d9e5;
             border-radius: 10px;
-            padding: 2rem;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 1000px;
+            margin: 40px auto;
+            text-align: center;
+            border: 2px solid #ecdfce;
         }
 
         h1 {
             color: #1a1a1a;
             margin-bottom: 1.5rem;
             text-align: center;
-            margin-top: -20px;
+            margin-top: -28px;
         }
 
         h2 {
-            background-color: #6495ed;
-            color: white;
-            padding: 1rem;
-            border-radius: 10px 10px 0 0;
-            margin-left: -32px;
-            text-align: left;
-            width: 103.2%;
-            margin-top: -30px;
+            font-size: 22px;
+            color: #112633;
         }
 
         /* Form Styles */
@@ -284,26 +292,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 0.8rem 1.5rem; /* Increase horizontal padding */
         }
 
-        label {
-            font-weight: bold;
+        label, p {
+            font-size: 18px;
+            color: #443E3A;
         }
 
-        input, textarea {
+        /* Input Fields */
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 15px;
+        }
+
+        input {
             border: 1px solid #ccc;
             border-radius: 5px;
             padding: 0.8rem;
             font-size: 1rem;
             outline: none;
-            width: 100%;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        input:focus, textarea:focus {
+        input:focus {
             border-color: #6c63ff;
-        }
-
-        textarea {
-            resize: none;
         }
 
         select {
@@ -314,22 +327,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border: 1px solid #ddd;
         }
 
+
         button {
-            display: block;
-            width: 20%;
-            padding: 0.5rem;
-            background-color: #6495ed;
-            color: #fff;
+            background-color: #3b667e;
+            color: white;
             border: none;
-            border-radius: 5px;
-            font-size: 1rem;
             cursor: pointer;
-            margin-top: 3rem;
-            margin-left: 370px;
+            width: 400px;
         }
 
         button:hover {
-            background-color: #5a52d4;
+            background-color: #ecdfce;
+            color: #2b2d42;
+            box-shadow: 0 0 15px 4px #3D5671;
         }
 
         .error-messages {
@@ -339,6 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 5px;
             padding: 1rem;
             margin-bottom: 1.5rem;
+            text-align: left;
         }
         .error-messages ul {
             list-style-type: disc;
@@ -350,12 +361,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             line-height: 1.5;
         }
 
+        /* Error Modal */
+        .error-modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .error-modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .error-modal-content h2 {
+            color: #d8000c;
+            margin-bottom: 1rem;
+        }
+
+        .error-modal-content button {
+            background-color: #2c6485;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .error-modal-content button:hover {
+            background-color: #22303f;
+        }
+
     </style>
 </head>
 <body>
 <?php include('admin_header.php'); ?>
     <main class="main-content">
         <h1>Edit Student Details</h1>
+        <?php if (!empty($error_message)): ?>
+            <div class="error-modal" id="errorModal" style="display: flex;">
+                <div class="error-modal-content">
+                    <h2>Error</h2>
+                    <p><?php echo htmlspecialchars($error_message); ?></p>
+                    <button onclick="window.location.href='student.php'">Go Back</button>
+                </div>
+            </div>
+        <?php else: ?>
         <div class="form-container">
             <div class="form-card">
                 <h2>Student Details</h2>
@@ -408,6 +471,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </form>
             </div>
         </div>
+        <?php endif; ?>
     </main>
 </body>
 </html>

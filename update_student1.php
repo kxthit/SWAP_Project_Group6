@@ -101,16 +101,19 @@ $stmt->bind_result($department_name);
 $stmt->fetch();
 $stmt->close();
 
-// Fetch course names
+// Fetch course names and statuses
 $courses = [];
 foreach ($_SESSION['selected_courses'] as $course_id) {
-    $stmt = $conn->prepare("SELECT course_name FROM course WHERE course_id = ?");
+    $stmt = $conn->prepare("SELECT course_name, status_name FROM course c JOIN status s ON c.status_id = s.status_id WHERE course_id = ?");
     $stmt->bind_param("i", $course_id);
     $stmt->execute();
-    $stmt->bind_result($course_name);
+    $stmt->bind_result($course_name, $status_name);
     $stmt->fetch();
     $stmt->close();
-    $courses[] = htmlspecialchars($course_name);
+    $courses[] = [
+        'name' => htmlspecialchars($course_name),
+        'status' => htmlspecialchars($status_name)
+    ];
 }
 
 // Fetch class names grouped by course
@@ -128,7 +131,6 @@ foreach ($_SESSION['selected_classes'] as $course_id => $class_ids) {
     }
     $classes[$course_id] = $class_list;
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -137,135 +139,196 @@ foreach ($_SESSION['selected_classes'] as $course_id => $class_ids) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update Student Details</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* General Reset */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
-            background-color: #f5f7fc;
         }
-        .form-container {
-            width: 100%;
-            max-width: 1000px;
-            margin: 1rem auto;
-            background-color: #fff;
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        /* Student Card Centered */
+        .student-card {
+            width: 800px; /* Fixed width */
+            min-height: 400px; /* Adjust as needed */
+            margin: 40px auto; /* Center the card */
+            background: #2c6485;
             border-radius: 10px;
-            padding: 1rem;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 30px;
-        }
-        h2 {
-            background-color: #6495ed;
+            padding: 20px;
             color: white;
-            padding: 1rem;
-            border-radius: 10px 10px 0 0;
-            margin-left: -17px;
-            width: 100.2%;
-            margin-top: -30px;
+            border: 2px solid #ecdfce;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+
+        .student-card h2 {
+            color: #f1eaeb;
+            margin-bottom: 10px;
+            text-align: center;
         }
-        th {
-            text-align: right;
-            padding: 10px;
-            vertical-align: top;
+
+        .student-card p {
+            margin: 5px 0;
+            font-size: 16px;
+            color: #ecdfce;
         }
-        td {
-            padding: 10px;
-            text-align: left;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        ul li {
-            margin-left: 20px;
-        }
-        .action-buttons {
+
+        .badges {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             gap: 10px;
+            margin-top: 10px;
+        }
+
+        /* Status Labels */
+        .status-icon {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            padding: 4px 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            text-align: center;
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        .status-green {
+            background-color: rgba(34, 197, 94, 0.10);
+            color: rgb(34, 197, 94);
+            border-color: rgb(34, 197, 94);
+        }
+
+        .status-yellow {
+            background-color: rgba(255, 200, 35, 0.1);
+            color: rgb(234, 179, 8);
+            border-color: rgb(234, 179, 8);
+        }
+
+        .status-red {
+            background-color: rgba(239, 68, 68, 0.10);
+            color: rgb(239, 68, 68);
+            border-color: rgb(239, 68, 68);
+        }
+
+        .status-blue {
+            background-color: rgba(59, 130, 246, 0.10);
+            color: rgb(59, 130, 246);
+            border-color: rgb(59, 130, 246);
+        }
+
+        /* Classes */
+        .class-item {
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            border: 1px solid white;
+        }
+
+        /* Button Styling */
+        .action-buttons {
+            text-align: center;
             margin-top: 20px;
         }
-        button {
+
+        .action-buttons button {
             padding: 10px 20px;
             border: none;
             border-radius: 5px;
             font-size: 1rem;
             cursor: pointer;
+            font-weight: bold;
         }
+
         .submit-btn {
             background-color: #28a745;
             color: white;
         }
+
         .cancel-btn {
             background-color: #dc3545;
             color: white;
         }
-        button:hover {
+
+        .action-buttons button:hover {
             opacity: 0.9;
         }
+
+        /* Course Status Labels */
+        .status-icon {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            padding: 4px 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            text-align: center;
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        .status-green { background-color: rgba(34, 197, 94, 0.10); color: rgb(34, 197, 94); border-color: rgb(34, 197, 94); }
+        .status-yellow { background-color: rgba(255, 200, 35, 0.1); color: rgb(234, 179, 8); border-color: rgb(234, 179, 8); }
+        .status-red { background-color: rgba(239, 68, 68, 0.10); color: rgb(239, 68, 68); border-color: rgb(239, 68, 68); }
+        .status-blue { background-color: rgba(59, 130, 246, 0.10); color: rgb(59, 130, 246); border-color: rgb(59, 130, 246); }
+
+
     </style>
 </head>
 <body>
+
 <?php include('admin_header.php'); ?>
-    <main class="main-content">
-        <form action="update_student1.php" method="POST">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
-            <div class="form-container">
-                <h2>Final Student Details</h2>
-                <table>
-                    <tr>
-                        <th>Name:</th>
-                        <td><?= htmlspecialchars($student_data['student_name']) ?></td>
-                    </tr>
-                    <tr>
-                        <th>Admission Number:</th>
-                        <td><?= htmlspecialchars($student_data['admission_number']) ?></td>
-                    </tr>
-                    <tr>
-                        <th>Email:</th>
-                        <td><?= htmlspecialchars($student_data['student_email']) ?></td>
-                    </tr>
-                    <tr>
-                        <th>Phone:</th>
-                        <td><?= htmlspecialchars($student_data['student_phone']) ?></td>
-                    </tr>
-                    <tr>
-                        <th>Department:</th>
-                        <td><?= htmlspecialchars($department_name) ?></td>
-                    </tr>
-                    <tr>
-                        <th>Courses:</th>
-                        <td>
-                            <ul>
-                                <?php foreach ($courses as $course): ?>
-                                    <li><?= $course ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Classes:</th>
-                        <td>
-                            <ul>
-                                <?php foreach ($classes as $course_id => $class_list): ?>
-                                    <?php foreach ($class_list as $class): ?>
-                                        <li><?= $class ?></li>
-                                    <?php endforeach; ?>
-                                <?php endforeach; ?>
-                            </ul>
-                        </td>
-                    </tr>
-                </table>
+<main class="main-content">
+    <h1>Final Student Details</h1>
+    <form action="update_student1.php" method="POST">
+        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
+
+        <div class="student-card">
+            <h2><?= htmlspecialchars($student_data['student_name']) ?></h2>
+            <p><strong>Admission No:</strong> <?= htmlspecialchars($student_data['admission_number']) ?></p>
+            <p><strong>Email:</strong> <?= htmlspecialchars($student_data['student_email']) ?></p>
+            <p><strong>Phone:</strong> <?= htmlspecialchars($student_data['student_phone']) ?></p>
+            <p><strong>Department:</strong> <?= htmlspecialchars($department_name) ?></p>
+
+            <!-- Courses Section -->
+            <h3>Courses:</h3>
+            <div class="badges">
+                <?php foreach ($courses as $course): ?>
+                    <?php 
+                        $status_class = 'status-blue';
+                        if (strtolower($course['status']) == 'start') $status_class = 'status-green';
+                        elseif (strtolower($course['status']) == 'in-progress') $status_class = 'status-yellow';
+                        elseif (strtolower($course['status']) == 'ended') $status_class = 'status-red';
+                    ?>
+                    <p><strong><?= $course['name'] ?></strong> <span class="status-icon <?= $status_class; ?>"><?= $course['status'] ?></span></p>
+                <?php endforeach; ?>
             </div>
-            <div class="action-buttons">
-                <button type="submit" class="submit-btn">Submit</button>
-                <button type="button" class="cancel-btn" onclick="window.location.href='display_student.php?student_id=<?= $student_data['student_id'] ?>'">Cancel</button>
+
+            <!-- Classes Section -->
+            <h3>Classes:</h3>
+            <div class="badges">
+                <?php foreach ($classes as $course_id => $class_list): ?>
+                    <?php foreach ($class_list as $class): ?>
+                        <p class="class-item"><?= $class ?></p>
+                    <?php endforeach; ?>
+                <?php endforeach; ?>
             </div>
-        </form>
-    </main>
+        </div>
+
+        <div class="action-buttons">
+            <button type="submit" class="submit-btn">Submit</button>
+            <button type="button" class="cancel-btn" onclick="window.location.href='display_student.php?student_id=<?= $student_data['student_id'] ?>'">Cancel</button>
+        </div>
+    </form>
+</main>
 </body>
 </html>

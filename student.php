@@ -309,6 +309,44 @@ if ($result) {
             transition: 100ms;
         }
 
+        /* Styling for the Create Student Button */
+        .create-student-btn {
+            padding: 8px 20px;
+            /* Smaller button size */
+            border-radius: 50px;
+            cursor: pointer;
+            border: 0;
+            background-color: #10171e;
+            /* Dark blue/charcoal */
+            color: white;
+            box-shadow: rgb(0 0 0 / 10%) 0 0 8px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-size: 12px;
+            transition: all 0.5s ease;
+            text-decoration: none;
+        }
+
+        .create-student-btn:hover {
+            letter-spacing: 3px;
+            background-color: #FCD34D;
+            /* Warm gold */
+            color: black;
+            box-shadow: rgb(252 211 77) 0px 7px 29px 0px;
+            /* Soft gold glow */
+        }
+
+        .create-student-btn:active {
+            letter-spacing: 3px;
+            background-color: #FCD34D;
+            /* Warm gold */
+            color: black;
+            box-shadow: rgb(252 211 77) 0px 0px 0px 0px;
+            transform: translateY(5px);
+            transition: 100ms;
+        }
+
+
   </style>
 </head>
 <body>
@@ -342,6 +380,7 @@ if ($result) {
                 </select>
 
                 <button type="submit">Apply Filters</button>
+                <a href="create_student.php" class="create-student-btn">Create Student</a>
             </form>
         </section>
 
@@ -361,12 +400,6 @@ if ($result) {
         </section>
     </main>
 
-    
-    <div class="create-button">
-        <a href="create_student.php">
-            <img src="image/add_button.png" alt="Create Student">
-        </a>
-    </div>
     
 
 </body>

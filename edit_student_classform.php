@@ -4,9 +4,11 @@
 include 'db_connection.php';
 include 'session_management.php';
 
+$error_message="";
+
 // Check if the user is authenticated and authorized
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_role']) || !in_array($_SESSION['session_role'], [1, 2])) {
-    echo "<h2>Unauthorized access.</h2>";
+    $error_message= "Unauthorized access. Please log in.";
     header('Refresh: 3; URL=login.php');
     exit;
 }
@@ -18,7 +20,7 @@ $course_names = [];
 
 // Validate session data
 if (empty($selected_courses)) {
-    echo "<h2>No courses selected. Please go back and select a course.</h2>";
+    $error_message= "No courses selected. Please go back and select a course.";
     header('Refresh: 3; URL=edit_student_courseform.php');
     exit;
 }
@@ -46,7 +48,7 @@ foreach ($selected_courses as $course_id) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF Token Validation
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die("Something went wrong. Please try again.");
+        $error_message="Something went wrong. Please try again.";
     }
 
     // Regenerate CSRF token after validation
@@ -54,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Validate class selection
     if (!isset($_POST['classes']) || !is_array($_POST['classes'])) {
-        die("Invalid class selection.");
+        $errors="Invalid class selection.";
     }
 
     // Ensure only numeric class IDs are stored
@@ -79,45 +81,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Edit Classes</title>
     <link rel="stylesheet" href="style.css">
     <style>
-         /* General Reset */
-         body {
-            font-family: 'Arial', sans-serif;
+        /* General Reset */
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            background-color: #f5f7fc;
             margin: 0;
             padding: 0;
-            background-color: #f5f7fc;
         }
 
         /* Container Styles */
         .form-container {
-            width: 100%;
-            max-width: 768px;
-            margin: 2rem auto;
-            background-color: #fff;
+            background: #c3d9e5;
             border-radius: 10px;
-            padding: 2rem;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 1000px;
+            margin: 40px auto;
+            text-align: center;
+            border: 2px solid #ecdfce;
         }
 
         h1 {
             color: #1a1a1a;
-            margin-bottom: 3rem;
+            margin-bottom: 1.5rem;
             text-align: center;
         }
 
         h2 {
-            background-color: #6495ed;
-            color: white;
-            padding: 1rem;
-            border-radius: 10px 10px 0 0;
-            margin-left: -32px;
-            text-align: left;
-            width: 800px;
-            margin-top: -32px;
+            font-size: 22px;
+            color: #112633;
         }
 
         /* Form Styles */
         form {
             padding: 1.5rem;
+            text-align: left;
         }
 
         .form-group {
@@ -131,37 +129,141 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* Style the horizontal line under each course name */
         .course-container hr {
             border: none;
-            border-top: 2px solid #6495ed;
+            border-top: 2px solid #3b667e;
             margin: 0.5rem 0 1rem;
+        }
+
+        /* Checkbox styling */
+        .radio-section label {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .radio-section input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
         }
 
         button {
             display: block;
-            width: 20%;
-            padding: 0.5rem;
-            background-color: #6495ed;
-            color: #fff;
+            width: 40%;
+            padding: 0.8rem;
+            background-color: #3b667e;
+            color: white;
             border: none;
             border-radius: 5px;
             font-size: 1rem;
             cursor: pointer;
-            margin-top: 3rem;
-            margin-left: 300px;
+            margin-top: 2rem;
+            margin-left: auto;
+            margin-right: auto;
+            text-transform: uppercase;
+            font-weight: bold;
         }
 
         button:hover {
-            background-color: #5a52d4;
+            background-color: #ecdfce;
+            color: #2b2d42;
+            box-shadow: 0 0 15px 4px #3D5671;
         }
+
+        .error-messages {
+            background-color: #ffdddd;
+            color: #d8000c;
+            border: 1px solid #d8000c;
+            border-radius: 5px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .error-messages ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .error-messages li {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        /* Error Modal */
+        .error-modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .error-modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .error-modal-content h2 {
+            color: #d8000c;
+            margin-bottom: 1rem;
+        }
+
+        .error-modal-content button {
+            background-color: #2c6485;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .error-modal-content button:hover {
+            background-color: #22303f;
+        }
+
     </style>
 </head>
 <body>
 <?php include('admin_header.php'); ?>
     <main class="main-content">
         <h1>Edit Classes</h1>
+        <?php if (!empty($error_message)): ?>
+            <div class="error-modal" id="errorModal" style="display: flex;">
+                <div class="error-modal-content">
+                    <h2>Error</h2>
+                    <p><?php echo htmlspecialchars($error_message); ?></p>
+                    <button onclick="window.location.href='student.php'">Go Back</button>
+                </div>
+            </div>
+        <?php else: ?>
         <div class="form-container">
             <h2>Classes for Selected Courses</h2>
+            
+            <?php if (!empty($errors)): ?>
+                <div class="error-messages">
+                    <ul>
+                        <?php foreach ($errors as $error): ?>
+                            <li><?php echo htmlspecialchars($error); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
             <form action="edit_student_classform.php" method="POST">
                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
+
                 <?php foreach ($selected_courses as $course_id): ?>
                     <div class="course-container">
                         <!-- Display course name -->
@@ -199,8 +301,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit">Next</button>
             </form>
         </div>
+        <?php endif; ?>
     </main>
 </body>
 </html>
-
-

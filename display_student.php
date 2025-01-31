@@ -28,18 +28,25 @@ if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_role'])) {
     $error_message = "Unauthorized access. Please log in.";
 }
 
-// Validate student_id from URL
-if (!isset($_GET['student_id']) || !is_numeric($_GET['student_id'])) {
-    $error_message = "Invalid or missing student ID.";
-}
-
 // Generate CSRF token if missing
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+// Check if student_id is in GET request and store it in session
+if (isset($_GET['student_id']) && is_numeric($_GET['student_id'])) {
+    $_SESSION['session_studentid'] = intval($_GET['student_id']); // Store in session for safety
+    header("Location: display_student.php"); // Redirect to prevent student_id from appearing in the URL
+    exit();
+}
+
+// Ensure student_id is available
+if (!isset($_SESSION['session_studentid'])) {
+    die("Invalid or missing student ID.");
+}
+
 // Get session details
-$student_id = intval($_GET['student_id']);
+$student_id = $_SESSION['session_studentid'];
 $session_userid = $_SESSION['session_userid'];
 $session_role = $_SESSION['session_role'];
 

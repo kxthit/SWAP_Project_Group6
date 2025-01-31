@@ -4,19 +4,39 @@
 include 'db_connection.php';
 include 'session_management.php';
 
+$error_message="";
+
 // Check if the user is authenticated
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_role'])) {
-    echo "<h2>Unauthorized access. Please log in.</h2>";
+    $error_message= "Unauthorized access. Please log in.";
     header('Refresh: 3; URL=login.php');
     exit;
 }
 
 // Restrict access to only Admins and Faculty
 if ($_SESSION['session_role'] !== 1) {
-    echo "<h2>Unauthorized access.</h2>";
+    $error_message= "Unauthorized access.";
     exit;
 }
 
+// Generate CSRF token if missing
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// Handle student_id safely
+if (isset($_GET['student_id']) && is_numeric($_GET['student_id'])) {
+    $_SESSION['session_studentid'] = intval($_GET['student_id']); // Store in session
+    header("Location: edit_studentform1.php"); // Redirect to remove `student_id` from the URL
+    exit();
+}
+
+// Ensure student_id is available
+if (!isset($_SESSION['session_studentid'])) {
+    die("Invalid or missing student ID.");
+}
+
+$student_id = $_SESSION['session_studentid'];
 // Initialize error message array
 $errors = [];
 
@@ -31,42 +51,39 @@ while ($row = $result->fetch_assoc()) {
 $stmt->close();
 
 // Fetch existing student details if student_id is provided
-if (isset($_GET['student_id'])) {
-    $student_id = intval($_GET['student_id']);
-    $stmt = $conn->prepare("SELECT student.student_name, student.student_email, student.student_phone, student.department_id, user.user_id, user.admission_number 
-                            FROM student 
-                            JOIN user ON student.user_id = user.user_id 
-                            WHERE student.student_id = ?");
-    $stmt->bind_param('i', $student_id);
-    $stmt->execute();
-    $student_result = $stmt->get_result();
+$stmt = $conn->prepare("SELECT student.student_name, student.student_email, student.student_phone, student.department_id, user.user_id, user.admission_number 
+                        FROM student 
+                        JOIN user ON student.user_id = user.user_id 
+                        WHERE student.student_id = ?");
+$stmt->bind_param('i', $student_id);
+$stmt->execute();
+$student_result = $stmt->get_result();
 
-    if ($student_result->num_rows > 0) {
-        $student = $student_result->fetch_assoc();
+if ($student_result->num_rows > 0) {
+    $student = $student_result->fetch_assoc();
 
-        // Store all student data including student_id in the session
-        $_SESSION['student_data'] = [
-            'student_id' => $student_id,
-            'user_id' => $student['user_id'],
-            'student_name' => $student['student_name'],
-            'admission_number' => $student['admission_number'],
-            'student_email' => $student['student_email'],
-            'student_phone' => $student['student_phone'],
-            'department_id' => $student['department_id'],
-        ];
-    } else {
-        error_log("Student ID $student_id not found - " . date('Y-m-d H:i:s') . "\n", 3, 'error_log.txt');
-        echo "<h2>An error occurred. Please try again later.</h2>";
-        exit;
-    }
-    $stmt->close();
+    // Store all student data including student_id in the session
+    $_SESSION['student_data'] = [
+        'student_id' => $student_id,
+        'user_id' => $student['user_id'],
+        'student_name' => $student['student_name'],
+        'admission_number' => $student['admission_number'],
+        'student_email' => $student['student_email'],
+        'student_phone' => $student['student_phone'],
+        'department_id' => $student['department_id'],
+    ];
+} else {
+    error_log("Student ID $student_id not found - " . date('Y-m-d H:i:s') . "\n", 3, 'error_log.txt');
+    $error_message= "An error occurred. Please try again later.";
+    exit;
 }
+$stmt->close();
 
 // Handle form submission for student update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF token validation
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        $errors[] = "Invalid session token. Please try again.";
+        $error_message = "Invalid session token. Please try again.";
     } else {
         // Regenerate CSRF token after submission
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -133,42 +150,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Student</title>
     <link rel="stylesheet" href="style.css">
+    
     <style>
         /* General Reset */
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Source Sans Pro', sans-serif;
+            background-color: #f5f7fc;
             margin: 0;
             padding: 0;
-            background-color: #f5f7fc;
         }
 
         /* Container Styles */
         .form-container {
-            width: 100%;
-            max-width: 1000px;
-            margin: 1rem auto;
-            background-color: #fff;
+            background: #c3d9e5;
             border-radius: 10px;
-            padding: 2rem;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 1000px;
+            margin: 40px auto;
+            text-align: center;
+            border: 2px solid #ecdfce;
         }
 
         h1 {
             color: #1a1a1a;
             margin-bottom: 1.5rem;
             text-align: center;
-            margin-top: -20px;
+            margin-top: -28px;
         }
 
         h2 {
-            background-color: #6495ed;
-            color: white;
-            padding: 1rem;
-            border-radius: 10px 10px 0 0;
-            margin-left: -32px;
-            text-align: left;
-            width: 103.2%;
-            margin-top: -30px;
+            font-size: 22px;
+            color: #112633;
         }
 
         /* Form Styles */
@@ -178,41 +191,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .form-row {
             display: flex;
-            gap: 4rem; /* Space between photo and table */
+            gap: 4rem; /* Space between columns */
             flex-wrap: wrap;
             margin-bottom: 1.5rem;
-        }
-
-        .photo-upload {
-            flex: 0 0 10%; /* Photo box column takes 30% width */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            height: 100px;
-            margin-left: 15px;
-            margin-top: 12px;
-        }
-        .photo-upload label {
-            align-self: flex-start; /* Ensure the label aligns to the left */ 
-            margin-left: -30px;
-        }
-
-        .photo-box {
-            border: 2px dashed #ccc;
-            border-radius: 5px;
-            padding: 2rem;
-            text-align: center;
-            color: #888;
-            cursor: pointer;
-            height: 200px; /* Adjust height as needed */
-            width: 100%;
-        }
-
-        #image-preview {
-            margin-top: 20px;
-            border: 1px solid #ccc;
-            display: block;
         }
 
         .details-table {
@@ -231,26 +212,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 0.8rem 1.5rem; /* Increase horizontal padding */
         }
 
-        label {
-            font-weight: bold;
+        label, p {
+            font-size: 18px;
+            color: #443E3A;
         }
 
-        input, textarea {
+        /* Input Fields */
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 15px;
+        }
+
+        input {
             border: 1px solid #ccc;
             border-radius: 5px;
             padding: 0.8rem;
             font-size: 1rem;
             outline: none;
-            width: 100%;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        input:focus, textarea:focus {
+        input:focus {
             border-color: #6c63ff;
-        }
-
-        textarea {
-            resize: none;
         }
 
         select {
@@ -262,23 +248,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         button {
-            display: block;
-            width: 20%;
-            padding: 0.5rem;
-            background-color: #6495ed;
-            color: #fff;
+            background-color: #3b667e;
+            color: white;
             border: none;
-            border-radius: 5px;
-            font-size: 1rem;
             cursor: pointer;
-            margin-top: 3rem;
-            margin-left: 370px;
+            width: 400px;
         }
 
         button:hover {
-            background-color: #5a52d4;
+            background-color: #ecdfce;
+            color: #2b2d42;
+            box-shadow: 0 0 15px 4px #3D5671;
         }
 
+        /* Error Messages */
         .error-messages {
             background-color: #ffdddd;
             color: #d8000c;
@@ -286,12 +269,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 5px;
             padding: 1rem;
             margin-bottom: 1.5rem;
+            text-align: left;
         }
+        
         .error-messages ul {
             list-style-type: disc;
             padding-left: 20px;
             margin: 0;
         }
+        
         .error-messages li {
             font-size: 1rem;
             line-height: 1.5;
@@ -303,9 +289,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php include('admin_header.php'); ?>
     <main class="main-content">
         <h1>Edit Student Details</h1>
+        <?php if (!empty($error_message)): ?>
+            <div class="error-modal" id="errorModal" style="display: flex;">
+                <div class="error-modal-content">
+                    <h2>Error</h2>
+                    <p><?php echo htmlspecialchars($error_message); ?></p>
+                    <button onclick="window.location.href='student.php'">Go Back</button>
+                </div>
+            </div>
+        <?php else: ?>
         <div class="form-container">
             <div class="form-card">
                 <h2>Student Details</h2>
+                
                 <?php if (!empty($errors)): ?>
                     <div class="error-messages">
                         <ul>
@@ -315,12 +311,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </ul>
                     </div>
                 <?php endif; ?>
+
                 <form action="edit_studentform1.php" method="POST">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                <!-- Form fields here (same as before, including value retention) -->
-                    <!-- Row with Photo and Table -->
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+
+                    <!-- Row with Details Table -->
                     <div class="form-row">
-                        <!-- Right Column: Table -->
                         <table class="details-table">
                             <tr>
                                 <td>
@@ -358,10 +354,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </tr>
                         </table>
                     </div>
+
                     <button type="submit">Next</button>
                 </form>
             </div>
         </div>
+        <?php endif; ?>
     </main>
 </body>
 </html>

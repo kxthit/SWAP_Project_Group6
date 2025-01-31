@@ -24,7 +24,6 @@ header {
   border-bottom: 2px solid rgba(0, 0, 0, 0.1);
 }
 
-
 /* User Info */
 .user-info {
   display: flex;
@@ -36,6 +35,13 @@ header {
   text-transform: uppercase;
   letter-spacing: 1px;
   position: relative;
+}
+
+/* Profile */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Adds space between elements in the profile */
 }
 
 /* User Details */
@@ -76,6 +82,20 @@ header {
   height: auto; /* Maintain aspect ratio */
 }
 
+/* Logout Button */
+.logout-button {
+  width: 33px; /* Adjust size */
+  height: auto;
+  margin-top: 18px;
+  margin-left: 15px; /* Add space between user info and logout button */
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+/* Hover effect on logout button */
+.logout-button:hover {
+  transform: scale(1.1);
+}
 
 /* Navigation Bar */
 .navbar {
@@ -105,7 +125,6 @@ header {
   z-index: 998;
 }
 
-/* Navbar List */
 .navbar ul {
   list-style-type: none;
   margin: 0;
@@ -173,5 +192,3 @@ header {
   padding: 20px;
   background-color: #f5fffa;
 }
-
-
