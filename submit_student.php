@@ -24,10 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (!isset($_POST['csrf_token']) || $_
 
 // Handle final submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Ensure session contains the required data
     if (!isset($_SESSION['student_data'], $_SESSION['selected_courses'], $_SESSION['selected_classes'])) {
-        echo '<h2>Session data missing. Please restart the registration process.</h2>';
-        exit;
+        die('<h2>Session data missing. Please restart the registration process.</h2>');
     }
 
     $student_data = $_SESSION['student_data'];
@@ -49,50 +47,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Begin transaction
         $conn->begin_transaction();
 
-        // Insert into user table
+        // Hash the password
         $hashed_password = password_hash($student_data['hashed_password'], PASSWORD_DEFAULT);
-        $role_id = 3; // Ensure this role exists in the database
+
+        // Insert into user table
+        $role_id = 3;
         $stmt = $conn->prepare("INSERT INTO user (admission_number, hashed_password, role_id) VALUES (?, ?, ?)");
         $stmt->bind_param("ssi", $student_data['admission_number'], $hashed_password, $role_id);
-        if (!$stmt->execute()) {
-            throw new Exception("User table error: " . $stmt->error);
-        }
+        $stmt->execute();
         $user_id = $conn->insert_id;
 
         // Insert into student table
         $stmt = $conn->prepare("INSERT INTO student (student_name, student_email, student_phone, user_id, department_id) VALUES (?, ?, ?, ?, ?)");
         $stmt->bind_param("ssssi", $student_data['student_name'], $student_data['student_email'], $student_data['student_phone'], $user_id, $student_data['department_id']);
-        if (!$stmt->execute()) {
-            throw new Exception("Student table error: " . $stmt->error);
-        }
+        $stmt->execute();
         $student_id = $conn->insert_id;
 
         // Map student to courses
         $stmt = $conn->prepare("INSERT INTO student_course (student_id, course_id) VALUES (?, ?)");
         foreach ($selected_courses as $course_id) {
             $stmt->bind_param("ii", $student_id, $course_id);
-            if (!$stmt->execute()) {
-                throw new Exception("Student-course mapping error: " . $stmt->error);
-            }
+            $stmt->execute();
         }
 
         // Map student to classes
         $stmt = $conn->prepare("INSERT INTO student_class (student_id, class_id) VALUES (?, ?)");
         foreach ($selected_classes as $course_id => $class_id) {
             $stmt->bind_param("ii", $student_id, $class_id);
-            if (!$stmt->execute()) {
-                throw new Exception("Student-class mapping error: " . $stmt->error);
-            }
+            $stmt->execute();
         }
 
         // Commit the transaction
         $conn->commit();
 
-
         header('Location: student.php');
         exit;
     } catch (Exception $e) {
-        // Rollback on error
         $conn->rollback();
         echo '<h2>An error occurred during submission</h2>';
         echo '<p>Error details: ' . htmlspecialchars($e->getMessage()) . '</p>';
@@ -101,5 +91,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 ?>
-
-
