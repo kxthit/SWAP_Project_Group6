@@ -135,7 +135,13 @@ body {
   }
   
 
-  .navbar li {
+  /* Navbar Items */
+.navbar li {
+    text-align: center;
+    position: relative;
+  }
+
+  .navbar a {
     display: block;
     padding: 10px 20px;
     font-family: 'Source Sans Pro', sans-serif;
@@ -153,7 +159,7 @@ body {
   }
   
   /* Hover Effect */
-  .navbar li:hover {
+  .navbar a:hover {
     color: #2b2d42; /* Text turns dark */
     background-color: #ecdfce; /* Background turns white */
     transform: scale(1.1);
@@ -162,7 +168,7 @@ body {
   }
   
   /* Hover Underline Effect */
-  .navbar li:hover::before {
+  .navbar a:hover::before {
     content: "";
     position: absolute;
     left: -50%;
@@ -174,7 +180,7 @@ body {
     z-index: -1;
   }
   
-  .navbar li:hover::before {
+  .navbar a:hover::before {
     width: 200%;
     left: 50%;
     top: 0%;
