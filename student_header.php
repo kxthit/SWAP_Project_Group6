@@ -38,8 +38,8 @@
     <!-- Navigation Bar -->
     <nav class="navbar">
         <ul>
-            <li>Profile</li>
-            <li>Grades</li>
+            <li><a href="student_profile.php">Profile</a></li>
+            <li><a href="student_grades.php">Grades</a></li>
         </ul>
     </nav>
 
