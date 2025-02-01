@@ -154,4 +154,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "Error: Could not insert course. Please try again.";
     }
 }
-?>
+mysqli_close($conn); ?>

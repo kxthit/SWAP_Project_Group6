@@ -243,3 +243,4 @@ if (isset($_POST['return_button'])) {  // Assuming your return button is named '
     </div>
 </body>
 </html>
+<?php mysqli_close($conn); ?>

@@ -4,6 +4,7 @@ include 'db_connection.php';
 
 // Ensure the user is authenticated
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
+    mysqli_close($conn); // Close the DB connection before redirecting
     header("Location: login.php"); // Redirect if not authenticated
     exit;
 }
@@ -62,23 +63,27 @@ if (isset($_POST['course_id'])) {
         if ($stmt->execute()) {
             // Set session message for successful deletion
             $_SESSION['delete_message'] = "Course deleted successfully.";
+            mysqli_close($conn); // Close DB connection before redirect
             header("Location: course_delete_notice.php"); // Redirect to confirmation page
             exit;
         } else {
             // If execution fails, display an error
             $_SESSION['delete_message'] = "Failed to delete course. Please try again.";
+            mysqli_close($conn); // Close DB connection before redirect
             header("Location: course_delete_notice.php");
             exit;
         }
     } else {
         // If the user doesn't have permission to delete, set a specific error message
         $_SESSION['delete_message'] = "You cannot delete a course that is not Unassigned.";
+        mysqli_close($conn); // Close DB connection before redirect
         header("Location: course_delete_notice.php");
         exit;
     }
 } else {
     // If no course_id is provided, handle the error
     $_SESSION['delete_message'] = "No course ID provided.";
+    mysqli_close($conn); // Close DB connection before redirect
     header("Location: course_delete_notice.php");
     exit;
 }

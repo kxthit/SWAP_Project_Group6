@@ -142,4 +142,4 @@ if ($query->execute()) {
 } else {
     echo "Error executing UPDATE query.";
 }
-?>
+mysqli_close($conn); ?>

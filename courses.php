@@ -230,5 +230,4 @@ $classes_result = $classes_stmt->get_result();
     </main>
 </body>
 </html>
-
-
+<?php mysqli_close($conn); ?>

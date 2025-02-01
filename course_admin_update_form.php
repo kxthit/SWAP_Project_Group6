@@ -214,3 +214,4 @@ $assigned_faculty_row = $assigned_faculty_result->fetch_assoc();
     </div>
 </body>
 </html>
+<?php mysqli_close($conn); ?>

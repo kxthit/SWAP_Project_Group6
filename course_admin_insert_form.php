@@ -159,3 +159,4 @@ $form_data = isset($_SESSION['course_data']) ? $_SESSION['course_data'] : [];
     </div>
 </body>
 </html>
+<?php mysqli_close($conn); ?>

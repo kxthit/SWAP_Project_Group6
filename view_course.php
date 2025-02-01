@@ -239,9 +239,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
-
 ?>
     </div>
 </div>
 </body>
 </html>
+<?php mysqli_close($conn); ?>
