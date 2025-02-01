@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'student_name' => htmlspecialchars($student_name),
             'student_email' => htmlspecialchars($student_email),
             'student_phone' => htmlspecialchars($student_phone),
-            'hashed_password' => password_hash($hashed_password, PASSWORD_DEFAULT), // Secure hashing
+            'hashed_password' => htmlspecialchars($hashed_password), // Secure hashing
             'department_id' => htmlspecialchars($department_id)
         ];
 
