@@ -1,0 +1,248 @@
+/* General body styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #E7E8E7; /* Platinum */
+    margin: 0;
+    padding: 0;
+}
+
+/* Main content area */
+.main-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Page title */
+.main-content h1 {
+    font-size: 2rem;
+    color: #22303F; /* Yankees Blue */
+    text-align: center;
+}
+
+/* Filters Section */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 20px;
+}
+
+.filters input, .filters select {
+    width: 250px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #394A56; /* Charcoal */
+    font-size: 14px;
+}
+
+.filters button {
+    padding: 10px 20px;
+    background-color: #2C6485; /* B'dazzled Blue */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.filters button:hover {
+    background-color: #22303F; /* Yankees Blue */
+}
+
+/* Classes Container */
+.classes-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+    border-radius: 10px;
+    background-color: #FFFFFF; /* White */
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Scrollable Div */
+.scrollable {
+    max-height: 400px; /* Set the height of the scrollable area */
+    overflow-y: auto; /* Enable vertical scrolling */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    padding: 10px;
+}
+
+/* Individual Class Card */
+.class-card {
+    background-color: #2C6485; /* B'dazzled Blue */
+    color: #FFFFFF; /* White */
+    border-radius: 10px;
+    width: 280px;
+    padding: 20px;
+    text-align: left; /* Align text to the left */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative; /* For absolute positioning of card actions */
+    transition: transform 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.class-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.class-card h3 {
+    margin-bottom: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.class-card p {
+    margin-bottom: 5px;
+    font-size: 16px;
+    font-weight: normal;
+}
+
+.class-card a {
+    display: inline-block;
+    margin-top: 10px;
+    background-color: #22303F; /* Yankees Blue */
+    color: #FFFFFF;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.class-card a:hover {
+    background-color: #8FBFDA; /* Dark Sky Blue */
+}
+
+/* Card Actions for Edit and Delete */
+.card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+}
+
+.card-actions form {
+    margin: 0;
+    padding: 0;
+}
+
+.card-actions button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+}
+
+.card-actions button:hover {
+    transform: scale(1.1); /* Slight scaling effect */
+}
+
+.card-actions img {
+    width: 24px; /* Adjust the size of the icons */
+    height: 24px;
+    display: inline-block;
+    pointer-events: none;
+}
+
+/* Prevent scaling the entire div */
+.card-actions:hover img {
+    transform: none;
+}
+
+/* Add specific styles to constrain the actions within the card */
+.class-card {
+    position: relative;
+    overflow: hidden;
+}
+
+/* View Details Button */
+.view-details {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.view-details .view-button {
+    padding: 10px 20px;
+    background-color: #394A56; /* Charcoal */
+    color: #FFFFFF; /* White */
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.view-details .view-button:hover {
+    background-color: #2C6485; /* B'dazzled Blue */
+}
+
+.view-details .view-button:active {
+    transform: scale(0.95); /* Slight shrink on click */
+}
+
+/* Add Button Styling */
+.add-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    width: 60px;
+    height: 60px;
+    background-color: #FFFFFF; /* B'dazzled Blue */
+    color: #FFFFFF; /* White */
+    border-radius: 50%; /* Circular shape */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.add-button img {
+    width: 24px; /* Icon size */
+    height: 24px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.add-button:hover {
+    background-color: #8FBFDA; /* Dark Sky Blue */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3); /* Enhanced shadow */
+    transform: scale(1.1); /* Slight enlargement */
+}
+
+.add-button img:hover {
+    transform: rotate(90deg); /* Rotate icon on hover */
+}
+
+.add-button:active {
+    background-color: #22303F; /* Yankees Blue */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Subtle shadow on click */
+    transform: scale(0.95); /* Slight shrink on click */
+}

@@ -1,0 +1,198 @@
+/* Page layout and design */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 12px 40px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
+    overflow-y: auto;
+    /* Enable vertical scrolling */
+    max-height: 550px;
+    /* Set a maximum height for the container */
+}
+
+.container:hover {
+    box-shadow: 0px 18px 50px rgba(0, 0, 0, 0.25);
+    transform: scale(1.01);
+}
+
+h1 {margin-top: 200px;
+    text-align: center;
+    color: #0d2444;
+}
+
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.course-card {
+    background: #2c6485;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    transition: 0.3s ease;
+    border: 2px solid #ecdfce;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    /* Make the card a positioned element */
+    overflow: hidden;
+    /* Ensure content doesn't spill out */
+}
+
+.grade-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 15px 4px rgb(95, 142, 174);
+}
+
+.grade-card h2 {
+    color: #f1eaeb;
+    margin: 0 0 10px;
+}
+
+.grade-card p {
+    margin: 5px 0;
+    font-size: 16px;
+    color: #ecdfce;
+}
+
+.actions {
+    margin-top: 15px;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: #fff;
+    color: #10171e;
+    font-size: 18px;
+    text-decoration: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #10171e;
+    margin-right: 10px;
+}
+
+.icon-btn:hover {
+    background-color: #10171e;
+    color: #fff;
+}
+
+.icon-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #fff;
+    color: #10171e;
+    font-size: 24px;
+    border-radius: 10px;
+    text-decoration: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #10171e;
+}
+
+.icon-box:hover {
+    background-color: #10171e;
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.button-container {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.return-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 30px;
+    color: #10171e;
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.return-btn:hover {
+    color: #d9534f;
+    transform: scale(1.1);
+}
+
+.cgpa {
+    font-size: 22px;
+    font-weight: bold;
+    color: #0d2444;
+    text-align: center;
+}
+
+.badges {
+    position: absolute;
+    /* Position badges at the bottom-right */
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.status-icon {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding: 4px 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid transparent;
+    text-align: center;
+}
+
+.status-icon.green {
+    background-color: rgba(34, 197, 94, 0.10);
+    color: rgb(34, 197, 94);
+    border-color: rgb(34, 197, 94);
+}
+
+.status-icon.yellow {
+    background-color: rgba(255, 200, 35, 0.1);
+    color: rgb(234, 179, 8);
+    border-color: rgb(234, 179, 8);
+}
+
+.status-icon.blue {
+    background-color: rgba(59, 130, 246, 0.10);
+    color: rgb(59, 130, 246);
+    border-color: rgb(59, 130, 246);
+}
+
+.status-icon.red {
+    background-color: rgba(239, 68, 68, 0.10);
+    color: rgb(239, 68, 68);
+    border-color: rgb(239, 68, 68);
+}

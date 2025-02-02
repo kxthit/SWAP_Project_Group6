@@ -1,0 +1,109 @@
+/* General body styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #E7E8E7; /* Platinum */
+    margin: 0;
+    padding: 0;
+}
+
+/* Main content area */
+.main-content {
+    position: relative; /* To ensure the back button is positioned relative to this container */
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+}
+
+/* Page title */
+.main-content h1 {
+    font-size: 2.5rem;
+    color: #22303F; /* Yankees Blue */
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Form container */
+form {
+    position: relative; /* Ensure the form stays on top of the background */
+    z-index: 1; /* Lower z-index compared to the back button */
+    width: 100%;
+    max-width: 700px;
+    background-color: #FFFFFF; /* White */
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Form group styling */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 16px;
+    color: #394A56; /* Charcoal */
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid #394A56; /* Charcoal */
+    border-radius: 5px;
+    background-color: #F5F5F5; /* Light gray */
+    transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #2C6485; /* B'dazzled Blue */
+    outline: none;
+    box-shadow: 0 0 6px rgba(44, 100, 133, 0.5);
+}
+
+/* Form actions (buttons) */
+.btn-submit {
+    background-color: #2C6485; /* B'dazzled Blue */
+    color: #FFFFFF; /* White */
+    border: none;
+    padding: 12px 25px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.btn-submit:hover {
+    background-color: #22303F; /* Yankees Blue */
+}
+
+/* Back Button Styling */
+.back-button-container {
+    position: absolute;
+    top: 200px; /* Adjust the vertical position */
+    left: 200px; /* Adjust the horizontal position */
+    z-index: 1000; /* Ensure the button is above other elements */
+}
+
+.back-button img {
+    width: 40px; /* Adjust the size of the image */
+    height: auto;
+    cursor: pointer;
+    transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+.back-button img:hover {
+    opacity: 0.7; /* Slight opacity change on hover */
+    transform: scale(1.1); /* Scale slightly on hover for visual feedback */
+}
+
