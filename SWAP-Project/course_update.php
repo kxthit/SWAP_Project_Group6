@@ -64,8 +64,8 @@ $upd_departmentid = htmlspecialchars($_POST["upd_departmentid"]);
 
 // Input validation
 $errors = [];
-if (strlen($upd_coursename) < 1 || strlen($upd_coursename) > 100) {
-    $errors[] = "Course name must be between 1 and 100 characters.";
+if (strlen($upd_coursename) < 1 || strlen($upd_coursename) > 200) {
+    $errors[] = "Course name must be between 1 and 200 characters.";
 }
 
 if (strlen($upd_coursecode) != 7) {

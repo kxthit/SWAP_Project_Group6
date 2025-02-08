@@ -1,7 +1,7 @@
 /* Body styles */
 body {
     font-family: Arial, sans-serif;
-    background-color:#F4F4F4 ;
+    background-color:#4a5568;
     margin: 0;
     padding: 0;
     display: flex;
@@ -55,7 +55,11 @@ body {
 
 /* Form styling */
 .form-group {
-    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    align-items: center; /* Center align horizontally */
+    justify-content: center; /* Center align vertically */
+    width: 100%; /* Ensure the group spans the available width */
 }
 
 label {
@@ -88,6 +92,15 @@ input:focus {
     background-color: white; /* Change background color when focused */
 }
 
+/* Styling for the "Forgot Password?" link */
+.forgot-password-btn {
+    font-size: 14px;
+
+    text-decoration: none;
+    margin-top: 15px; /* Add spacing above link */
+    text-align: center; /* Center text */
+}
+
 /* Button styling */
 button {
     width: 50%;
@@ -100,6 +113,7 @@ button {
     cursor: pointer;
     margin-left: 85px;
     margin-top: 10px;
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 
@@ -110,17 +124,21 @@ button:hover {
     color: black;
     box-shadow: rgb(252 211 77) 0px 7px 29px 0px;
     /* Soft gold glow */
+    transform: scale(1.1);
+    
 }
 
-button:active {
+
+.button:active {
     letter-spacing: 3px;
     background-color: #FCD34D;
     /* Warm gold */
     color: black;
     box-shadow: rgb(252 211 77) 0px 0px 0px 0px;
-    transform: translateY(5px);
-    transition: 100ms;
+    transform: translateY(3px); /* Add a subtle press effect */
+    transition: transform 100ms ease;
 }
+
 
 /* Error message styling */
 .error-message {

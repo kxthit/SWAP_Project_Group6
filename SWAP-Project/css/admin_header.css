@@ -24,6 +24,20 @@ header {
   border-bottom: 2px solid rgba(0, 0, 0, 0.1);
 }
 
+/* Logout Button */
+.logout-button {
+  width: 33px; /* Adjust size */
+  height: auto;
+  margin-top: 18px;
+  margin-left: 15px; /* Add space between user info and logout button */
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+/* Hover effect on logout button */
+.logout-button:hover {
+  transform: scale(1.1);
+}
 
 /* User Info */
 .user-info {
@@ -36,21 +50,6 @@ header {
   text-transform: uppercase;
   letter-spacing: 1px;
   position: relative;
-}
-
-/* Logout Button */
-.logout-button {
-  width: 20px;
-  height: auto;
-  margin-top: 18px;
-  margin-left: 15px; /* Add space between user info and logout button */
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-/* Hover effect on logout button */
-.logout-button:hover {
-  transform: scale(1.1);
 }
 
 

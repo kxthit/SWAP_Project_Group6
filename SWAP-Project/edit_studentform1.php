@@ -1,42 +1,38 @@
 <?php
 
 // Include the database connection
+include 'db_connection.php';
 include 'csrf_protection.php';
-include_once 'db_connection.php';
 
-// Check for POST submission
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    // CSRF check
-    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
-        regenerate_csrf_token();
-        die("Invalid CSRF token. <a href='logoutform.php'>Try again</a>");
-    }
-
-$error_message="";
+$error_message = "";
 
 // Check if the user is authenticated
-if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_role'])) {
-    $error_message= "Unauthorized access. Please log in.";
-    header('Refresh: 3; URL=logout.php');
+if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
+    $error_message = "Unauthorized access. Please log in.";
+    header('Refresh: 3; URL=login.php');
     exit;
 }
 
 // Restrict access to only Admins and Faculty
-if ($_SESSION['session_role'] !== 1) {
-    $error_message= "Unauthorized access.";
+if ($_SESSION['session_roleid'] !== 1) {
+    $error_message = "Unauthorized access.";
     exit;
 }
 
-// Handle student_id safely
-if (isset($_GET['student_id']) && is_numeric($_GET['student_id'])) {
-    $_SESSION['session_studentid'] = intval($_GET['student_id']); // Store in session
-    header("Location: edit_studentform1.php"); // Redirect to remove `student_id` from the URL
-    exit();
-}
 
-// Ensure student_id is available
-if (!isset($_SESSION['session_studentid'])) {
-    die("Invalid or missing student ID.");
+// Handle student_id safely
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle POST request for student_id safely
+    if (isset($_POST['student_id']) && is_numeric($_POST['student_id'])) {
+        $_SESSION['session_studentid'] = intval($_POST['student_id']); // Store in session
+        header("Location: edit_studentform1.php"); // Redirect to remove `student_id` from the URL
+        exit();
+    }
+
+    // Ensure student_id is available
+    if (!isset($_SESSION['session_studentid'])) {
+        die("Invalid or missing student ID.");
+    }
 }
 
 $student_id = $_SESSION['session_studentid'];
@@ -77,10 +73,20 @@ if ($student_result->num_rows > 0) {
     ];
 } else {
     error_log("Student ID $student_id not found - " . date('Y-m-d H:i:s') . "\n", 3, 'error_log.txt');
-    $error_message= "An error occurred. Please try again later.";
+    $error_message = "An error occurred. Please try again later.";
     exit;
 }
 $stmt->close();
+
+// Handle form submission for student update
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // CSRF token validation
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $error_message = "Invalid session token. Please try again.";
+    } else {
+        // Regenerate CSRF token after submission
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
 
     // Extract form data
     $student_name = trim($_POST['student_name'] ?? '');
@@ -138,271 +144,100 @@ $stmt->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Student</title>
     <link rel="stylesheet" href="style.css">
-    
-    <style>
-        /* General Reset */
-        body {
-            font-family: 'Source Sans Pro', sans-serif;
-            background-color: #f5f7fc;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Container Styles */
-        .form-container {
-            background: #c3d9e5;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 10px;
-            max-width: 1000px;
-            margin: 20px auto;
-            text-align: center;
-            border: 2px solid #ecdfce;
-            position: relative;
-            margin-left: 20px;
-        }
-
-        h1 {
-            color: #1a1a1a;
-            margin-bottom: 1.5rem;
-            text-align: center;
-            
-        }
-
-        h2 {
-            font-size: 22px;
-            color: #112633;
-        }
-
-        /* Form Styles */
-        form {
-            padding: 1.5rem;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 4rem; /* Space between columns */
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-        }
-
-        .details-table {
-            flex: 1; /* Table takes up the remaining space */
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .details-table th, .details-table td {
-            text-align: left;
-            padding: 0.8rem;
-        }
-
-        .details-table td {
-            border-bottom: none;
-            padding: 0.8rem 1.5rem; /* Increase horizontal padding */
-        }
-
-        label, p {
-            font-size: 18px;
-            
-        }
-
-        /* Input Fields */
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            font-size: 15px;
-        }
-
-        input {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 0.8rem;
-            font-size: 1rem;
-            outline: none;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        input:focus {
-            border-color: #6c63ff;
-        }
-
-        select {
-            width: 300px;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-        }
-
-        button {
-            background-color: #3b667e;
-            color: white;
-            border: none;
-            cursor: pointer;
-            width: 400px;
-        }
-
-        button:hover {
-            background-color: #ecdfce;
-            color: #2b2d42;
-            box-shadow: 0 0 15px 4px #3D5671;
-        }
-
-        /* Error Messages */
-        .error-messages {
-            background-color: #ffdddd;
-            color: #d8000c;
-            border: 1px solid #d8000c;
-            border-radius: 5px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-        
-        .error-messages ul {
-            list-style-type: disc;
-            padding-left: 20px;
-            margin: 0;
-        }
-        
-        .error-messages li {
-            font-size: 1rem;
-            line-height: 1.5;
-        }
-
-        /* Container for Back Button + Main Content */
-        .page-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Centers the student details */
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto; /* Centers content horizontally */
-            padding-top: 20px;
-            position: relative; /* Ensures proper alignment */
-        }
-
-        /* Flexbox for Back Button */
-        .top-section {
-            display: flex;
-            justify-content: flex-start; /* Aligns Back button to the left */
-            width: 100%;
-            margin-top: 50px;
-            margin-bottom: -100px;
-            margin-left:-400px;
-        }
-
-        /* Back Button Styling */
-        .back-button {
-            padding: 10px 15px;
-            background-color: #3b667e;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-        }
-
-        .back-button:hover {
-            background-color: #ecdfce;
-            color: #2b2d42;
-            box-shadow: 0 0 10px 2px #3D5671;
-        }
-        
-
-    </style>
+    <link rel="stylesheet" href="css/edit_studentform1.css">
 </head>
+
 <body>
-<?php include('admin_header.php'); ?>
-<div class="page-wrapper">
-<!-- Top Section with Back Button -->
-    <div class="top-section">
-        <a href="display_student.php" class="back-button">← Back</a>
-    </div>
+    <?php include('admin_header.php'); ?>
     <main class="main-content">
-        <h1>Edit Student Details</h1>
-        <?php if (!empty($error_message)): ?>
-            <div class="error-modal" id="errorModal" style="display: flex;">
-                <div class="error-modal-content">
-                    <h2>Error</h2>
-                    <p><?php echo htmlspecialchars($error_message); ?></p>
-                    <button onclick="window.location.href='student.php'">Go Back</button>
-                </div>
+
+        <div class="page-wrapper">
+            <!-- Top Section with Back Button -->
+            <div class="top-section">
+                <a href="display_student.php" class="back-button">← Back</a>
             </div>
-        <?php else: ?>
-        <div class="form-container">
-            <div class="form-card">
-                <h2>Student Details</h2>
-                
-                <?php if (!empty($errors)): ?>
-                    <div class="error-messages">
-                        <ul>
-                            <?php foreach ($errors as $error): ?>
-                                <li><?php echo htmlspecialchars($error); ?></li>
-                            <?php endforeach; ?>
-                        </ul>
+            <main class="main-content">
+                <h1>Edit Student Details</h1>
+                <?php if (!empty($error_message)): ?>
+                    <div class="error-modal" id="errorModal" style="display: flex;">
+                        <div class="error-modal-content">
+                            <h2>Error</h2>
+                            <p><?php echo htmlspecialchars($error_message); ?></p>
+                            <button onclick="window.location.href='student.php'">Go Back</button>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="form-container">
+                        <div class="form-card">
+                            <h2>Student Details</h2>
+
+                            <?php if (!empty($errors)): ?>
+                                <div class="error-messages">
+                                    <ul>
+                                        <?php foreach ($errors as $error): ?>
+                                            <li><?php echo htmlspecialchars($error); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
+
+                            <form action="edit_studentform1.php" method="POST">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+
+                                <!-- Row with Details Table -->
+                                <div class="form-row">
+                                    <table class="details-table">
+                                        <tr>
+                                            <td>
+                                                <label for="student_name">Full Name *</label>
+                                                <input type="text" id="student_name" name="student_name" value="<?= htmlspecialchars($_POST['student_name'] ?? $_SESSION['student_data']['student_name'] ?? '') ?>" required>
+                                            </td>
+                                            <td>
+                                                <label for="admission_number">Admission No. *</label>
+                                                <input type="text" id="admission_number" name="admission_number" value="<?= htmlspecialchars($_POST['admission_number'] ?? $_SESSION['student_data']['admission_number'] ?? '') ?>" required>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <label for="student_phone">Phone *</label>
+                                                <input type="text" id="student_phone" name="student_phone" value="<?= htmlspecialchars($_POST['student_phone'] ?? $_SESSION['student_data']['student_phone'] ?? '') ?>" required>
+                                            </td>
+                                            <td>
+                                                <label for="student_email">Email *</label>
+                                                <input type="email" id="student_email" name="student_email" value="<?= htmlspecialchars($_POST['student_email'] ?? $_SESSION['student_data']['student_email'] ?? '') ?>" required>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2">
+                                                <label for="department_id">Department *</label>
+                                                <select id="department_id" name="department_id" required>
+                                                    <option value="">Select Department</option>
+                                                    <?php foreach ($departments as $department): ?>
+                                                        <option value="<?= $department['department_id'] ?>"
+                                                            <?= (($_POST['department_id'] ?? $_SESSION['student_data']['department_id'] ?? '') == $department['department_id']) ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($department['department_name']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+
+                                <button type="submit">Next</button>
+                            </form>
+                        </div>
                     </div>
                 <?php endif; ?>
-
-                <form action="edit_studentform1.php" method="POST">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-
-                    <!-- Row with Details Table -->
-                    <div class="form-row">
-                        <table class="details-table">
-                            <tr>
-                                <td>
-                                    <label for="student_name">Full Name *</label>
-                                    <input type="text" id="student_name" name="student_name" value="<?= htmlspecialchars($_POST['student_name'] ?? $_SESSION['student_data']['student_name'] ?? '') ?>" required>
-                                </td>
-                                <td>
-                                    <label for="admission_number">Admission No. *</label>
-                                    <input type="text" id="admission_number" name="admission_number" value="<?= htmlspecialchars($_POST['admission_number'] ?? $_SESSION['student_data']['admission_number'] ?? '') ?>" required>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <label for="student_phone">Phone *</label>
-                                    <input type="text" id="student_phone" name="student_phone" value="<?= htmlspecialchars($_POST['student_phone'] ?? $_SESSION['student_data']['student_phone'] ?? '') ?>" required>
-                                </td>
-                                <td>
-                                    <label for="student_email">Email *</label>
-                                    <input type="email" id="student_email" name="student_email" value="<?= htmlspecialchars($_POST['student_email'] ?? $_SESSION['student_data']['student_email'] ?? '') ?>" required>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="2">
-                                    <label for="department_id">Department *</label>
-                                    <select id="department_id" name="department_id" required>
-                                        <option value="">Select Department</option>
-                                        <?php foreach ($departments as $department): ?>
-                                            <option value="<?= $department['department_id'] ?>"
-                                                <?= (($_POST['department_id'] ?? $_SESSION['student_data']['department_id'] ?? '') == $department['department_id']) ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($department['department_name']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <button type="submit">Next</button>
-                </form>
-            </div>
+            </main>
         </div>
-        <?php endif; ?>
     </main>
-</div>
 </body>
+
 </html>

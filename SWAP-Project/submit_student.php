@@ -2,30 +2,30 @@
 
 // Include required files
 include 'db_connection.php';
-include 'session_management.php';
+include 'csrf_protecttion.php';
+
+$error_message="";
+$error_message_logout="";
 
 // Check if the user is authenticated
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
-    echo "<h2>Unauthorized access. Please log in.</h2>";
-    header('Refresh: 3; URL=login.php');
-    exit;
+    $error_message_logout="Session expired or unauthorized access. Please log in.";
 }
 
 // Authorization: Check user role (e.g., only admins or faculty can submit students)
 if ($_SESSION['session_roleid'] != 1 && $_SESSION['session_roleid'] != 2) {
-    echo "<h2>Unauthorized access. You do not have permission to perform this action.</h2>";
-    exit;
+    $error_message_logout= "Unauthorized access. You do not have permission to perform this action.";
 }
 
 // Validate CSRF token
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token'])) {
-    die('Invalid CSRF token. Please reload the page and try again.');
+    $error_message="Invalid CSRF token. Please reload the page and try again.";
 }
 
 // Handle final submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_SESSION['student_data'], $_SESSION['selected_courses'], $_SESSION['selected_classes'])) {
-        die('<h2>Session data missing. Please restart the registration process.</h2>');
+        $error_message="Session data missing. Please restart the registration process.";
     }
 
     $student_data = $_SESSION['student_data'];
@@ -89,3 +89,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
+
+?>

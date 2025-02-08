@@ -163,12 +163,12 @@ $classes_result = $classes_stmt->get_result();
 
 // Check if the return button was pressed
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_course'])) {
-    if($_SESSION['session_roleid']==1){
+    if ($_SESSION['session_roleid'] == 1) {
         header('Location: course_admin_insert_form.php');
-    }elseif($_SESSION['session_roleid']==2){
-    header('Location: course_insert_form.php');
+    } elseif ($_SESSION['session_roleid'] == 2) {
+        header('Location: course_insert_form.php');
     }
-        exit;
+    exit;
 }
 ?>
 
@@ -176,6 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_course'])) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -184,10 +185,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_course'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/courses.css">
 </head>
+
 <body>
-<?php include('admin_header.php') ;?>
+    <?php include('admin_header.php'); ?>
     <main class="main-content">
-        <p class="page-title">Courses</p>
+        <h1>Viewing All Student Courses</h1>
 
         <!-- Filters Section -->
         <section class="filters">
@@ -240,5 +242,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_course'])) {
         </form>
     </main>
 </body>
+
 </html>
 <?php mysqli_close($conn); ?>

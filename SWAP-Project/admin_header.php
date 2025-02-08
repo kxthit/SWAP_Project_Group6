@@ -37,8 +37,10 @@
                         ?>
                     </p>
                 </div>
-                <a href="logoutform.php" class="logout.php"></a>
             </div>
+            <a href="logout.php">
+                <img src="image/logout-button.png" alt="Logout" class="logout-button">
+            </a>
         </div>
     </header>
 

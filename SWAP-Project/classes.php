@@ -1,27 +1,29 @@
 <?php
 include 'db_connection.php';
-include 'session_management.php';
+include 'csrf_protection.php';
 session_start();
 
 // Check if the user is authenticated
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
-    echo "<h2>Unauthorized access. Please log in.</h2>";
-    header('Refresh: 3; URL=login.php');
+    header('Location: logout.php'); // Redirect unauthorized users
     exit;
 }
 
 $user_id = $_SESSION['session_userid'];
 $role_id = $_SESSION['session_roleid'];
 
-// CSRF Protection: Generate CSRF token if not set
-if (!isset($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
 // Ensure only Admin and Faculty can access
 if (!in_array($role_id, [1, 2])) {
-    echo " Unauthorised access. Please login";
-    header('logout.php');
+    header('HTTP/1.1 403 Forbidden');
+    die("Unauthorized access.");
+}
+
+// CSRF Protection: Validate CSRF token only for POST requests
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+        regenerate_csrf_token(); // Generate a new CSRF token
+        die("Invalid CSRF token. <a href='logout.php'>Try again</a>");
+    }
 }
 
 // Sanitize search input and class type filter
@@ -60,6 +62,7 @@ $bind_types = str_repeat('s', count($params));
 $stmt->bind_param($bind_types, ...$params);
 $stmt->execute();
 $result = $stmt->get_result();
+
 ?>
 
 <!DOCTYPE html>
@@ -108,15 +111,15 @@ $result = $stmt->get_result();
                                     <input type="hidden" name="class_id" value="<?php echo htmlspecialchars($row['class_id']); ?>">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                     <button type="submit" title="Edit">
-                                        <img src="image/edit-button.png" alt="Edit">
+                                        <img src="image/edit-button.jpeg" alt="Edit">
                                     </button>
                                 </form>
                                 <!-- Delete Button -->
-                                <form method="POST" action="deleteclass.php">
+                                <form method="POST" action="deleteclass.php" onsubmit="return confirm('Are you sure you want to delete this class? This action cannot be undone.')">
                                     <input type="hidden" name="class_id" value="<?php echo htmlspecialchars($row['class_id']); ?>">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                     <button type="submit" title="Delete">
-                                        <img src="image/delete-button.png" alt="Delete">
+                                        <img src="image/delete-button.jpeg" alt="Delete">
                                     </button>
                                 </form>
                             </div>
@@ -128,6 +131,7 @@ $result = $stmt->get_result();
                             <div class="view-details">
                                 <form method="POST" action="viewclass.php">
                                     <input type="hidden" name="class_id" value="<?php echo htmlspecialchars($row['class_id']); ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                     <button type="submit" class="view-button">View Details</button>
                                 </form>
                             </div>

@@ -27,7 +27,7 @@ header {
     font-size: 2.5rem;
     font-weight: bold;
     color: #004080;
-    margin-top: 180px;
+    margin-top: 50px;
     margin-bottom: 2px;
 }
 
@@ -41,37 +41,55 @@ header {
 }
 
 .course-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Ensures everything aligns at the top */
+    align-items: flex-start; /* Keeps content aligned to the left */
     background-color: #ffffff;
-    padding: 30px;
+    padding: 35px;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 70%;  /* Increased width for better spacing */
-    position: relative;
-    min-height: 450px;  /* Ensure enough height for content */
-}
-
-.course-details h2 {
-    color: #007ACC;
-    margin-bottom: 15px;
-    font-size: 1.8rem;
+    width: 60%;
+    min-height: 500px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 .course-details p {
-    font-size: 1rem;
+    font-size: 1.4rem;
     color: #333;
     margin-bottom: 10px;
 }
 
 .status-box {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;  /* Positioned from left side */
-    background-color: rgb(219, 2, 2);
-    color: white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    font-size: 0.9rem;
+    width: auto;
     text-align: center;
+    padding: 12px 20px;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: bold;
+    min-width: 150px;
+    max-width: 70%;
+    margin-top: 20px;  /* Ensure it's separated from the last content */
+    margin-bottom: 20px; /* Smaller gap between the status and buttons */
+}
+
+.status-btn-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Gives more space between status box and buttons */
+    width: 100%;
+}
+
+/* Button container update to ensure buttons wrap nicely */
+.btn-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap; /* Buttons will wrap instead of squishing */
+    width: 100%;
+    margin-top: 30px; /* Adjusted gap from the content above */
 }
 
 .status-box.In-Progress {
@@ -87,17 +105,6 @@ header {
 .status-box.Ended {
     background-color: #dc3545; 
     color: white;
-}
-
-.status-box {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    color: white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    font-size: 0.9rem;
-    text-align: center;
 }
 
 .status-box.Started {
@@ -121,12 +128,13 @@ header {
     background-color: #bbb; /* Default color for unknown status */
 }
 
-/* Keep the current button container layout */
+/* Ensure buttons don’t get wrecked */
 .btn-container {
     display: flex;
     justify-content: center;
     gap: 30px;
-    margin-top: 25px;
+    flex-wrap: wrap; /* Makes sure buttons don’t overflow */
+    width: 100%;
 }
 
 /* Button styling */

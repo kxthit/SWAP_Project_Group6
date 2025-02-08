@@ -16,12 +16,12 @@ function redirect($alert, $redirect)
 
 // Check if the user is authenticated , if not authenticated redirect to login page.
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
-    redirect('Unauthorized user. Redirecting To Login.', 'login.php');
+    redirect('Unauthorized user. Redirecting To Login.', 'logout.php');
 }
 
 // Check if the user has a valid role (Admin or Faculty) , if not authenticated redirect to login page.
 if ($_SESSION['session_roleid'] != 1 && $_SESSION['session_roleid'] != 2) {
-    redirect('You Do Not Have Permission To Access This.', 'login.php');
+    redirect('You Do Not Have Permission To Access This.', 'logout.php');
 }
 
 // Ensure student course grade ID is passed via URL
@@ -113,78 +113,7 @@ $stmt->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;700&family=Source+Sans+Pro:wght@300;400;700&display=swap" rel="stylesheet">
     <title>Update Grade</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .grade-update-form {
-            background: #c3d9e5;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-            transition: 0.3s ease;
-            border: 2px solid #ecdfce;
-        }
-
-        .grade-update-form:hover {
-            box-shadow: 0 0 15px 4px rgb(95, 142, 174);
-            transform: scale(1.01);
-        }
-
-        .grade-update-form h2 {
-            font-size: 22px;
-            color: #112633;
-        }
-
-        .grade-update-form label,
-        .grade-update-form p {
-            font-size: 18px;
-            color: #443E3A;
-        }
-
-        .grade-update-form select,
-        .grade-update-form button {
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            width: 100%;
-            font-size: 15px;
-            font-family: 'Source Sans Pro', sans-serif;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .grade-update-form button {
-            background-color: #3b667e;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        .grade-update-form button a {
-            text-decoration: none;
-            color: white;
-        }
-
-        /* Hover Effect */
-        .grade-update-form button:hover {
-            color: #2b2d42;
-            /* Text turns dark */
-            background-color: #ecdfce;
-            /* Background turns white */
-            box-shadow: 0 0 15px 4px #3D5671;
-            /* Glowing effect */
-            outline: none;
-        }
-    </style>
+    <link rel="stylesheet" href="css/update_gradeform.css">
 </head>
 
 <body>
