@@ -19,7 +19,7 @@ unset($_SESSION['error_message']);
         /* Body styles */
         body {
             font-family: Arial, sans-serif;
-            background-color: #F4F4F4;
+            background-color: #4a5568;
             margin: 0;
             padding: 0;
             display: flex;
@@ -187,7 +187,7 @@ unset($_SESSION['error_message']);
     <div class="login-container">
         <!-- Left section -->
         <div class="left">
-            <img src="image\x_y_z.-removebg-preview.png" alt="Welcome Image" class="welcome-img">
+            <img src="image/logo-main.png" alt="Welcome Image" class="welcome-img">
         </div>
 
         <!-- Right section -->

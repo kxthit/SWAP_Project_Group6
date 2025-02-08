@@ -1,12 +1,28 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+// Force logout when visiting login.php directly
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    session_unset();  // Unset all session variables
+    session_destroy(); // Destroy session
+
+    // Redirect to login form
+    header("Location: loginform.php");
+    exit;
+}
+
 // Include database connection
-include 'db_connection.php';
+include_once 'db_connection.php';
 include 'csrf_protection.php';
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+$error_message = "";
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
         regenerate_csrf_token();
-        die("Invalid CSRF token. <a href='loginform.php'>Try again</a>");
+        die("Invalid CSRF token. <a href='logout.php'>Try again</a>");
     }
 
     // Retrieve and sanitize inputs
@@ -17,14 +33,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (empty($form_admission_no) || empty($form_password)) {
         $error_message = "Admission number or password cannot be empty.";
     } else {
+        // Prepare the statement
         $stmt = mysqli_prepare($conn, "SELECT * FROM user WHERE admission_number = ?");
         mysqli_stmt_bind_param($stmt, 's', $form_admission_no);
         mysqli_stmt_execute($stmt);
+
+        // Fetch the result
         $result = mysqli_stmt_get_result($stmt);
         $row = mysqli_fetch_assoc($result);
 
         // Check if user exists
         if (!$row) {
+            // Error message for invalid admission number
             $error_message = "Invalid credentials. Please try again.";
         } else {
             // Verify password
@@ -78,5 +98,5 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 ?>
 
-<?php mysqli_close($conn);
+<?php include('loginform.php'); // Include the form here 
 ?>

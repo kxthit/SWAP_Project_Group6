@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
+            background-color: #4a5568;
             margin: 0;
             padding: 0;
             display: flex;
@@ -90,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         button {
             width: 100%;
             padding: 12px;
-            background-color: #6495ED;
+            background-color: #22303f;
             color: #fff;
             border: none;
             border-radius: 8px;
@@ -104,11 +105,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
         }
 
+        button:hover {
+            background-color: #FCD34D;
+            /* Darker blue */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            color: black;
+
+        }
+
         .reset-password-container div {
             text-align: left;
         }
     </style>
 </head>
+
 <body>
     <div class="reset-password-container">
         <h2>Reset Your Password</h2>
@@ -126,4 +136,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         </form>
     </div>
 </body>
+
 </html>

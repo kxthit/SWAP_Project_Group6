@@ -7,13 +7,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // CSRF check
     if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
         regenerate_csrf_token();
-        die("Invalid CSRF token. <a href='form.php'>Try again</a>");
+        die("Invalid CSRF token. <a href='access_key_form.php'>Try again</a>");
     }
 
     // Check if the user is logged in
     if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
         $_SESSION['error_message'] = "Unauthorized access. Please log in.";
-        header('Location: login.php');
+        header('Location: logout.php');
         exit;
     }
 

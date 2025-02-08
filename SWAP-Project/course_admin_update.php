@@ -198,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         unset($_SESSION['error_message']);
 
         // Redirect to the courses page
-        header("Location: courses.php");
+        header("Location: view_course.php");
         exit;
     } elseif($update_course_stmt->affected_rows == 0 && $insert_faculty_course_stmt->affected_rows == 0 && $update_faculty_course_stmt->affected_rows == 0) {
         // Clear session data after success
@@ -206,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         unset($_SESSION['error_message']);
 
         // Redirect to the courses page
-        header("Location: courses.php");{
+        header("Location: view_course.php");{
         }
     }
 }

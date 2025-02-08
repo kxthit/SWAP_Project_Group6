@@ -1,40 +1,49 @@
 <?php
+// Include necessary files
+include 'db_connection.php';
 include 'csrf_protection.php';
-include_once 'db_connection.php';
+
+// Ensure CSRF token is validated only for POST requests
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+        regenerate_csrf_token(); // Generate a new CSRF token
+        die("Invalid CSRF token. <a href='logout.php'>Try again</a>");
+    }
+}
 
 // Check if the user is authenticated
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
-    echo "<h2>Unauthorized access. Please log in.</h2>";
-    header('Refresh: 3; URL=login.php');
+    header('Location: logout.php'); // Redirect unauthorized users
     exit;
 }
 
 $user_id = $_SESSION['session_userid'];
 $role_id = $_SESSION['session_roleid'];
 
-// Generate CSRF token if not already set
-if (!isset($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
 // Validate and sanitize class_id
 $class_id = isset($_POST['class_id']) ? intval($_POST['class_id']) : 0;
-
 if ($class_id <= 0) {
-    header('Location: editclass_form.php');
+    $_SESSION['error_message'] = "Invalid class ID.";
+    header('Location: classes.php');
     exit;
 }
 
 // Restrict faculty to only their assigned classes
 if ($role_id == 2) {
-    $ownership_check_query = "SELECT COUNT(*) FROM class WHERE class_id = ? AND faculty_id = (SELECT faculty_id FROM faculty WHERE user_id = ?)";
+    $ownership_check_query = "
+        SELECT COUNT(*) 
+        FROM class 
+        WHERE class_id = ? 
+        AND faculty_id = (SELECT faculty_id FROM faculty WHERE user_id = ?)";
     $ownership_stmt = $conn->prepare($ownership_check_query);
     $ownership_stmt->bind_param('ii', $class_id, $user_id);
     $ownership_stmt->execute();
     $ownership_result = $ownership_stmt->get_result()->fetch_row();
 
     if ($ownership_result[0] == 0) {
-        die("Unauthorized access to this class.");
+        $_SESSION['error_message'] = "Unauthorized access to this class.";
+        header('Location: classes.php');
+        exit;
     }
 }
 
@@ -60,48 +69,68 @@ $result = $stmt->get_result();
 $class_details = $result->fetch_assoc();
 
 if (!$class_details) {
-    die("Class not found.");
+    $_SESSION['error_message'] = "Class not found.";
+    header('Location: classes.php');
+    exit;
 }
 
 // Fetch courses and faculties for dropdowns (only for admin)
+$courses_result = null;
+$faculties_result = null;
+
 if ($role_id == 1) { // Admin
     $courses_query = "SELECT course_id, course_name FROM course";
     $courses_result = $conn->query($courses_query);
 
     $faculties_query = "SELECT faculty_id, faculty_name FROM faculty";
     $faculties_result = $conn->query($faculties_query);
+} elseif ($role_id == 2) { // Faculty
+    $courses_query = "
+        SELECT c.course_id, c.course_name
+        FROM course c
+        INNER JOIN department d ON c.department_id = d.department_id
+        INNER JOIN faculty f ON f.department_id = d.department_id
+        WHERE f.user_id = ?
+    ";
+    $courses_stmt = $conn->prepare($courses_query);
+    $courses_stmt->bind_param('i', $user_id);
+    $courses_stmt->execute();
+    $courses_result = $courses_stmt->get_result();
 }
-
-session_write_close();
 
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Class</title>
-    <link rel="stylesheet" href="css/editclass_form.css">
+    <link rel="stylesheet" href="css/editclass_form.css"> <!-- Standardized CSS Path -->
 </head>
-
 <body>
-    <?php include('admin_header.php'); ?>
-
-    <!-- Back Button -->
-    <div class="back-button-container">
-        <a href="classes.php" class="back-button">
-            <img src="image/back_arrow.png" alt="Back">
-        </a>
-    </div>
+    <!-- Include dynamic header -->
+    <?php
+    if ($role_id == 1) {
+        include('admin_header.php');
+    } elseif ($role_id == 2) {
+        include('faculty_header.php');
+    }
+    ?>
 
     <div class="main-content">
+        <!-- Back Button -->
+        <div class="back-button-container">
+            <a href="classes.php" class="back-button">
+                <img src="image/back_arrow.png" alt="Back">
+            </a>
+        </div>
+
         <h1>Edit Class</h1>
 
         <form class="edit-class-form" method="POST" action="editclass.php">
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
             <input type="hidden" name="class_id" value="<?php echo htmlspecialchars($class_id); ?>">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
             <!-- Class Name -->
             <div class="form-group">
@@ -119,22 +148,21 @@ session_write_close();
                 </select>
             </div>
 
-            <?php if ($role_id == 1): // Admin Section 
-            ?>
-                <!-- Course -->
-                <div class="form-group">
-                    <label for="course_id">Course</label>
-                    <select id="course_id" name="course_id" required>
-                        <option value="" disabled>Select a course</option>
-                        <?php while ($course = $courses_result->fetch_assoc()): ?>
-                            <option value="<?php echo $course['course_id']; ?>" <?php echo ($course['course_id'] == $class_details['course_id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($course['course_name']); ?>
-                            </option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
+            <!-- Course Dropdown -->
+            <div class="form-group">
+                <label for="course_id">Course</label>
+                <select id="course_id" name="course_id" required>
+                    <option value="" disabled>Select a course</option>
+                    <?php while ($course = $courses_result->fetch_assoc()): ?>
+                        <option value="<?php echo $course['course_id']; ?>" <?php echo ($course['course_id'] == $class_details['course_id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($course['course_name']); ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
 
-                <!-- Faculty -->
+            <!-- Faculty Dropdown (Admin Only) -->
+            <?php if ($role_id == 1): ?>
                 <div class="form-group">
                     <label for="faculty_id">Faculty</label>
                     <select id="faculty_id" name="faculty_id" required>
@@ -146,27 +174,13 @@ session_write_close();
                         <?php endwhile; ?>
                     </select>
                 </div>
-            <?php else: // Faculty Section 
-            ?>
-                <!-- Course (Read-only for faculty) -->
-                <div class="form-group">
-                    <label>Course</label>
-                    <input type="text" value="<?php echo htmlspecialchars($class_details['course_name']); ?>" readonly>
-                </div>
-
-                <!-- Faculty (Read-only for faculty) -->
-                <div class="form-group">
-                    <label>Faculty</label>
-                    <input type="text" value="<?php echo htmlspecialchars($class_details['faculty_name']); ?>" readonly>
-                </div>
             <?php endif; ?>
 
             <!-- Submit Button -->
-            <div class="form-group">
-                <button class="btn-submit" type="submit">Save Changes</button>
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">Save Changes</button>
             </div>
         </form>
     </div>
 </body>
-
 </html>

@@ -23,7 +23,7 @@ if ($_SESSION['session_roleid'] != 1) {
 
 // Check if the user is authenticated
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
-    redirect('Unauthorized user. Redirecting to login.', 'login.php');
+    redirect('Unauthorized user. Redirecting to login.', 'logout.php');
 }
 
 // Check for POST submission

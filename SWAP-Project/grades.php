@@ -14,17 +14,14 @@ function redirect($alert, $redirect)
     exit;
 }
 
-
-
-
 // Check if the user is authenticated , if not authenticated redirect to login page.
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
-    redirect('Unauthorized user. Redirecting To Login.', 'login.php');
+    redirect('Unauthorized user. Redirecting To Login.', 'logout.php');
 }
 
 // Check if the user has a valid role (Admin or Faculty) , if not redirect to login page.
 if ($_SESSION['session_roleid'] != 1 && $_SESSION['session_roleid'] != 2) {
-    redirect('You Do Not Have Permission To Access This.', 'login.php');
+    redirect('You Do Not Have Permission To Access This.', 'logout.php');
 }
 
 // Retrieve user and session information
@@ -211,7 +208,7 @@ $classes_result = $classes_stmt->get_result();  // Get class filter results
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;700&family=Source+Sans+Pro:wght@300;400;700&display=swap" rel="stylesheet">
     <title>Dashboard</title>
-    <link rel='stylesheet' href="grades.css">
+    <link rel='stylesheet' href="css/grades.css">
 </head>
 
 <body>

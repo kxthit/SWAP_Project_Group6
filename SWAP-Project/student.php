@@ -1,50 +1,57 @@
 <?php
+
+include 'db_connection.php';
 include 'csrf_protection.php';
-include_once 'db_connection.php';
+
+$error_message_logout = "";
+$error_message = "";
 
 // Check if the user is authenticated
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
-    echo "<h2>Unauthorized access. Please log in.</h2>";
-    header('Refresh: 3; URL=login.php');
-    exit;
+    $error_message_logout = "Unauthorized access. Please log in.";
 }
-
-// Validate CSRF token
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['csrf_token']) && $_GET['csrf_token'] !== $_SESSION['csrf_token']) {
-    die('Invalid CSRF token. Please reload the page and try again.');
-}
-
 
 $role_id = $_SESSION['session_roleid']; // Get role ID from the session
 $user_id = $_SESSION['session_userid']; // Get user ID from the session
 
-// Fetch departments and classes for filter options
+// Prepare and execute query for departments
 $departments_query = "SELECT * FROM department";
-$departments_result = mysqli_query($conn, $departments_query);
+$departments_stmt = mysqli_prepare($conn, $departments_query);
+mysqli_stmt_execute($departments_stmt);
+$departments_result = mysqli_stmt_get_result($departments_stmt);
 
-// Fetch courses for filter options
+// Prepare and execute query for courses
 $courses_query = "SELECT * FROM course";
-$courses_result = mysqli_query($conn, $courses_query);
+$courses_stmt = mysqli_prepare($conn, $courses_query);
+mysqli_stmt_execute($courses_stmt);
+$courses_result = mysqli_stmt_get_result($courses_stmt);
 
-
+// Prepare and execute query for classes
 $classes_query = "SELECT * FROM class";
-$classes_result = mysqli_query($conn, $classes_query);
+$classes_stmt = mysqli_prepare($conn, $classes_query);
+mysqli_stmt_execute($classes_stmt);
+$classes_result = mysqli_stmt_get_result($classes_stmt);
+
+// Close the statements
+mysqli_stmt_close($departments_stmt);
+mysqli_stmt_close($courses_stmt);
+mysqli_stmt_close($classes_stmt);
 
 // Build the SQL query dynamically based on user input for search and filters
-$search_term = isset($_GET['search']) ? $_GET['search'] : '';
-$department_filter = isset($_GET['department']) ? $_GET['department'] : '';
-$course_filter = isset($_GET['course']) ? $_GET['course'] : '';
-$class_filter = isset($_GET['class']) ? $_GET['class'] : '';
+$search_term = isset($_POST['search']) ? $_POST['search'] : '';
+$department_filter = isset($_POST['department']) ? $_POST['department'] : '';
+$course_filter = isset($_POST['course']) ? $_POST['course'] : '';
+$class_filter = isset($_POST['class']) ? $_POST['class'] : '';
 
 // Validate filters
 if ($department_filter && !ctype_digit($department_filter)) {
-    die('Invalid department filter.');
+    $error_message = "Invalid department filter.";
 }
 if ($course_filter && !ctype_digit($course_filter)) {
-    die('Invalid course filter.');
+    $error_message = "Invalid course filter.";
 }
 if ($class_filter && !ctype_digit($class_filter)) {
-    die('Invalid class filter.');
+    $error_message = "Invalid class filter.";
 }
 
 // Base query for fetching students
@@ -70,16 +77,18 @@ $params = ["%$search_term%"];
 
 // If the user is a faculty (role_id == 2), restrict students to their courses
 if ($role_id == 2) {
+    // Get the faculty_id from the session
+    $faculty_id = $_SESSION['session_facultyid']; // Assuming the faculty_id is already stored in the session
+
+    // Modify the query to include courses taught by the faculty
     $query .= "
         AND sc.course_id IN (
             SELECT fc.course_id
             FROM faculty_course fc
-            JOIN faculty f ON fc.faculty_id = f.faculty_id
-            WHERE f.user_id = ?
+            WHERE fc.faculty_id = ?
         )
     ";
-
-    $params[] = $user_id;
+    $params[] = $faculty_id;
 }
 
 // Apply department filter if provided
@@ -110,8 +119,13 @@ $result = $stmt->get_result();
 if ($result) {
     $students = mysqli_fetch_all($result, MYSQLI_ASSOC);
 } else {
-    echo "<h2>Error fetching students data: " . mysqli_error($conn) . "</h2>";
+    $error_message = "Error fetching students data";
     $students = [];
+}
+
+// Validate CSRF token (Changed to POST)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['csrf_token']) && $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    $error_message = "Invalid CSRF token. Please reload the page and try again.";
 }
 ?>
 
@@ -122,308 +136,101 @@ if ($result) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .students-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            margin: 20px auto;
-            max-width: 1500px;
-            /* Increased max-width for a bigger container */
-            padding: 30px;
-            background-color: #f0f8ff;
-            /* Light blue background to differentiate the container */
-            border-radius: 15px;
-            /* Rounded corners for the container */
-            box-shadow: 0px 12px 40px rgba(0, 0, 0, 0.2);
-            /* Stronger shadow for a floating effect */
-            transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
-            /* Smooth transition for hover effect */
-        }
+    <link rel="stylesheet" href="css/student.css">
 
-        /* Hover effect for container */
-        .students-container:hover {
-            box-shadow: 0px 18px 50px rgba(0, 0, 0, 0.25);
-            transform: scale(1.01);
-            /* Slight zoom effect on hover */
-        }
-
-        /* Adjust height and make only the student card section scrollable */
-        .students {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            padding: 5px;
-            max-height: 500px;
-            /* Set a fixed height */
-            overflow-y: auto;
-            /* Enables vertical scrolling */
-            width: 100%;
-            /* Ensure it takes full width */
-        }
-
-        /* Student card style (unchanged) */
-        .student-card-link {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .student-card {
-            width: 220px;
-            /* Slightly bigger cards */
-            height: 240px;
-            /* Increased height for more content space */
-            background-color: #2c6485;
-            border-radius: 20px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            padding: 20px;
-            transition: transform 0.2s ease-in-out;
-            border: 2px solid #ecdfce;
-            /* Add border with desired color */
-        }
-
-        .student-card:hover {
-            transform: scale(1.05);
-            background-color: rgb(31, 64, 100);
-            box-shadow: 0 0 15px 4px rgb(95, 142, 174);
-            /* Glowing effect */
-        }
-
-        .student-profile-pic {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 10px;
-        }
-
-        .student-card h3 {
-            font-size: 18px;
-            margin: 10px 0;
-            color: #f1eaeb;
-            font-family: 'Source Sans Pro', sans-serif;
-            text-transform: uppercase;
-            font-weight: 700;
-        }
-
-
-        .student-card p {
-            font-size: 14px;
-            color: #ecdfce;
-            font-family: 'Source Sans Pro', sans-serif;
-            font-weight: 700;
-        }
-
-        /* Filters Container */
-        .filters {
-            margin-bottom: 30px;
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* Styling for the search bar */
-        .filters input[type="text"] {
-            width: 350px;
-            /* Slightly wider for a more balanced look */
-            padding: 10px;
-            border-radius: 25px;
-            /* More rounded corners */
-            border: 1px solid #ccc;
-            font-size: 14px;
-            /* Slightly bigger text for readability */
-            background-color: #F5EFEB;
-            /* Light background for contrast */
-            color: #333;
-            /* Darker text for better contrast */
-            transition: all 0.3s ease-in-out;
-            /* Smooth transition on focus */
-            border-color: #C8D9E6;
-        }
-
-        .filters input[type="text"]:focus {
-            outline: none;
-            border-color: #38caef;
-            /* Light blue border when focused */
-            background-color: #fff;
-            /* White background on focus */
-            box-shadow: 0 0 10px rgba(152, 185, 255, 0.6);
-            /* Soft shadow on focus */
-        }
-
-        /* Styling for the dropdown filters */
-        .filters select {
-            padding: 10px;
-            font-size: 14px;
-            /* Slightly bigger text */
-            border-radius: 25px;
-            /* Rounded corners */
-            border: 1px solid #ccc;
-            height: 40px;
-            /* Increased height for a more modern look */
-            background-color: #F5EFEB;
-            color: #333;
-            transition: all 0.3s ease-in-out;
-            cursor: pointer;
-            /* Cursor changes to pointer */
-            border-color: #C8D9E6;
-        }
-
-        .filters select:focus {
-            outline: none;
-            border-color: #38caef;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(152, 185, 255, 0.6);
-            /* Soft shadow on focus */
-        }
-
-        /* Optional: Add styling for the dropdown options */
-        .filters select option {
-            padding: 12px;
-            background-color: #fff;
-            color: #333;
-        }
-
-        .filters button {
-            padding: 8px 20px;
-            /* Smaller button size */
-            border-radius: 50px;
-            cursor: pointer;
-            border: 0;
-            background-color: #10171e;
-            /* Dark blue/charcoal */
-            color: white;
-            box-shadow: rgb(0 0 0 / 10%) 0 0 8px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            font-size: 12px;
-            transition: all 0.5s ease;
-        }
-
-        .filters button:hover {
-            letter-spacing: 3px;
-            background-color: #FCD34D;
-            /* Warm gold */
-            color: black;
-            box-shadow: rgb(252 211 77) 0px 7px 29px 0px;
-            /* Soft gold glow */
-        }
-
-        .filters button:active {
-            letter-spacing: 3px;
-            background-color: #FCD34D;
-            /* Warm gold */
-            color: black;
-            box-shadow: rgb(252 211 77) 0px 0px 0px 0px;
-            transform: translateY(5px);
-            transition: 100ms;
-        }
-
-        /* Styling for the Create Student Button */
-        .create-student-btn {
-            padding: 8px 20px;
-            /* Smaller button size */
-            border-radius: 50px;
-            cursor: pointer;
-            border: 0;
-            background-color: #10171e;
-            /* Dark blue/charcoal */
-            color: white;
-            box-shadow: rgb(0 0 0 / 10%) 0 0 8px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            font-size: 12px;
-            transition: all 0.5s ease;
-            text-decoration: none;
-        }
-
-        .create-student-btn:hover {
-            letter-spacing: 3px;
-            background-color: #FCD34D;
-            /* Warm gold */
-            color: black;
-            box-shadow: rgb(252 211 77) 0px 7px 29px 0px;
-            /* Soft gold glow */
-        }
-
-        .create-student-btn:active {
-            letter-spacing: 3px;
-            background-color: #FCD34D;
-            /* Warm gold */
-            color: black;
-            box-shadow: rgb(252 211 77) 0px 0px 0px 0px;
-            transform: translateY(5px);
-            transition: 100ms;
-        }
-    </style>
 </head>
 
 <body>
     <?php include('admin_header.php'); ?>
-
-    <!-- Main Content -->
     <main class="main-content">
-
-        <!-- Filters Section -->
-        <section class="filters">
-            <form method="get" action="">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                <input type="text" name="search" placeholder="Search by name" value="<?php echo htmlspecialchars($search_term); ?>">
-
-                <select name="department">
-                    <option value="">Select Department</option>
-                    <?php while ($department = mysqli_fetch_assoc($departments_result)): ?>
-                        <option value="<?php echo $department['department_id']; ?>" <?php echo ($department_filter == $department['department_id']) ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($department['department_name']); ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-
-                <select name="course">
-                    <option value="">Select Course</option>
-                    <?php while ($course = mysqli_fetch_assoc($courses_result)): ?>
-                        <option value="<?php echo $course['course_id']; ?>" <?php echo ($course_filter == $course['course_id']) ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($course['course_name']); ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-
-                <select name="class">
-                    <option value="">Select Class</option>
-                    <?php while ($class = mysqli_fetch_assoc($classes_result)): ?>
-                        <option value="<?php echo $class['class_id']; ?>" <?php echo ($class_filter == $class['class_id']) ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($class['class_name']); ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-
-                <button type="submit">Apply Filters</button>
-                <a href="create_student.php" class="create-student-btn">Create Student</a>
-            </form>
-        </section>
-
-
-        <section class="students-container">
-            <div class="students">
-                <?php foreach ($students as $student): ?>
-                    <a href="display_student.php?student_id=<?php echo urlencode($student['student_id']); ?>&csrf_token=<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>" class="student-card-link">
-                        <div class="student-card">
-                            <img src="<?php echo htmlspecialchars($student['profile_picture'] ?: 'image\default_pfp.jpeg'); ?>" alt="Profile Picture" class="student-profile-pic">
-                            <h3><?php echo htmlspecialchars($student['student_name']); ?></h3>
-                            <p>Admission No: <?php echo htmlspecialchars($student['admission_number']); ?></p>
-                        </div>
-                    </a>
-                <?php endforeach; ?>
+        <h1>Viewing All Student Records</h1>
+        <?php if (!empty($error_message)): ?>
+            <div class="error-modal" id="errorModal" style="display: flex;">
+                <div class="error-modal-content">
+                    <h2>Error</h2>
+                    <p><?php echo htmlspecialchars($error_message); ?></p>
+                    <form method="POST" action="student.php">
+                        <button type="submit">Go Back</button>
+                    </form>
+                </div>
             </div>
-        </section>
+        <?php else: ?>
+            <?php if (!empty($error_message_logout)): ?>
+                <div class="error-modal" id="errorModal" style="display: flex;">
+                    <div class="error-modal-content">
+                        <h2>Error</h2>
+                        <p><?php echo htmlspecialchars($error_message_logout); ?></p>
+                        <form method="POST" action="logout.php">
+                            <button type="submit">Go Back</button>
+                        </form>
+                    </div>
+                </div>
+            <?php else: ?>
+                <!-- Main Content -->
+                <main class="main-content">
+
+                    <!-- Filters Section -->
+                    <section class="filters">
+                        <form method="POST" action="">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                            <input type="text" name="search" placeholder="Search by name" value="<?php echo htmlspecialchars($search_term); ?>">
+
+                            <select name="department">
+                                <option value="">Select Department</option>
+                                <?php while ($department = mysqli_fetch_assoc($departments_result)): ?>
+                                    <option value="<?php echo $department['department_id']; ?>" <?php echo ($department_filter == $department['department_id']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($department['department_name']); ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
+
+                            <select name="course">
+                                <option value="">Select Course</option>
+                                <?php while ($course = mysqli_fetch_assoc($courses_result)): ?>
+                                    <option value="<?php echo $course['course_id']; ?>" <?php echo ($course_filter == $course['course_id']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($course['course_name']); ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
+
+                            <select name="class">
+                                <option value="">Select Class</option>
+                                <?php while ($class = mysqli_fetch_assoc($classes_result)): ?>
+                                    <option value="<?php echo $class['class_id']; ?>" <?php echo ($class_filter == $class['class_id']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($class['class_name']); ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
+
+                            <button type="submit">Apply Filters</button>
+                            <a href="create_student.php" class="create-student-btn">Create Student</a>
+                        </form>
+                    </section>
+
+
+                    <section class="students-container">
+                        <div class="students">
+                            <?php foreach ($students as $student): ?>
+                                <form method="POST" action="display_student.php" class="student-card-form">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                                    <input type="hidden" name="student_id" value="<?php echo htmlspecialchars($student['student_id']); ?>">
+                                    <button type="submit" class="student-card-button">
+                                        <div class="student-card">
+                                            <img src="<?php echo htmlspecialchars($student['profile_picture'] ?: 'image/default_pfp.jpeg'); ?>" alt="Profile Picture" class="student-profile-pic">
+                                            <h3><?php echo htmlspecialchars($student['student_name']); ?></h3>
+                                            <p>Admission No: <?php echo htmlspecialchars($student['admission_number']); ?></p>
+                                        </div>
+                                    </button>
+                                </form>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+                <?php endif; ?>
+            <?php endif; ?>
+                </main>
+
+
     </main>
-
-
 
 </body>
 

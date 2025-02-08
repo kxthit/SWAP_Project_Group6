@@ -16,12 +16,12 @@ function redirect($alert, $redirect)
 
 // Check if the user is authenticated , if not authenticated redirect to login page.
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
-    redirect('Unauthorized user. Redirecting To Login.', 'login.php');
+    redirect('Unauthorized user. Redirecting To Login.', 'logout.php');
 }
 
 // Check if the user has a valid role (Admin) , if not redirect to login page.
 if ($_SESSION['session_roleid'] != 1) {
-    redirect('You Do Not Have Permission To Access This.', 'grades.php');
+    redirect('You Do Not Have Permission To Access This.', 'logout.php');
 }
 
 
@@ -112,7 +112,7 @@ $average_performance_by_faculty = $average_performance_by_faculty_stmt->get_resu
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f9f9f9;
+            background-color: #4a5568;
         }
 
         h1 {

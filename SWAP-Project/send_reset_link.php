@@ -1,4 +1,5 @@
 <?php
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -26,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $update_stmt->bind_param('sss', $reset_token, $reset_token_expires, $email);
         if ($update_stmt->execute()) {
             // Generate the reset link
-            $reset_link = "http://localhost/disaster/reset_password.php?token=$reset_token";
+            $reset_link = "http://localhost/SWAP-Project/reset_password.php?token=$reset_token";
 
             // Send the reset link via PHPMailer
             $mail = new PHPMailer(true);
@@ -51,18 +52,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $mail->Body = "Click the link below to reset your password:<br><a href='$reset_link'>$reset_link</a>";
 
                 $mail->send();
-                echo "A reset link has been sent to your email.";
+                echo "<script>
+                alert('A Reset Link Was Sent To Your Email.'); // Alert message
+                window.location.href = 'forgot_password.php'; // Redirect to the given URL
+                 </script>";
             } catch (Exception $e) {
                 echo "Failed to send email. Mailer Error: {$mail->ErrorInfo}";
             }
         } else {
             echo "Failed to update token and expiration time.<br>";
             echo "Error: " . $update_stmt->error . "<br>";
-
         }
     } else {
-        echo "Email not found.";
+        echo "<script>
+            alert('Email Not Found. Please Provide A Valid Email.'); // Alert message
+            window.location.href = 'forgot_password.php'; // Redirect to the given URL
+        </script>";
     }
     mysqli_close($conn);
 }
-?>

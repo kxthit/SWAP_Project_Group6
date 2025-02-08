@@ -198,7 +198,8 @@ body {
 }
 
 .view-details .view-button:hover {
-    background-color: #2C6485; /* B'dazzled Blue */
+    background-color: #ecdfce; /* B'dazzled Blue */
+    color:black;
 }
 
 .view-details .view-button:active {

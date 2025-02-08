@@ -18,12 +18,12 @@ function redirect($alert, $redirect)
 
 // Check if the user is authenticated , if not authenticated redirect to login page.
 if (!isset($_SESSION['session_userid']) || !isset($_SESSION['session_roleid'])) {
-    redirect('Unauthorized user. Redirecting To Login.', 'login.php');
+    redirect('Unauthorized user. Redirecting To Login.', 'logout.php');
 }
 
 // Check if the user has a valid role (Admin or Faculty) , if not authenticated redirect to login page.
 if ($_SESSION['session_roleid'] != 1 && $_SESSION['session_roleid'] != 2) {
-    redirect('You Do Not Have Permission To Access This.', 'login.php');
+    redirect('You Do Not Have Permission To Access This.', 'logout.php');
 }
 
 // Check for POST submission

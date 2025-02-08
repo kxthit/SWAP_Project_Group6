@@ -1,7 +1,7 @@
 <?php
 // Include the database connection
+include 'db_connection.php';
 include 'csrf_protection.php';
-include_once 'db_connection.php';
 
 $error_message = ""; // Initialize an empty error message
 
@@ -12,15 +12,20 @@ if (!isset($_SESSION['session_userid']) || $_SESSION['session_roleid'] != 1) {
     exit;
 }
 
-// Check if the student_id is provided via GET
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($error_message)) {
-    if (!isset($_GET['student_id']) || !is_numeric($_GET['student_id'])) {
-        $error_message = "Invalid or missing student ID.";
-    } elseif (!isset($_GET['csrf_token']) || $_GET['csrf_token'] !== $_SESSION['csrf_token']) {
-        $error_message = "Invalid CSRF token. Please reload the page and try again.";
-    } else {
+// Generate CSRF token if missing
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
-        $student_id = intval($_GET['student_id']);
+// Process the form if the request method is POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $error_message = "Invalid CSRF token. Please reload the page and try again.";
+    } elseif (!isset($_POST['student_id']) || !is_numeric($_POST['student_id'])) {
+        $error_message = "Invalid or missing student ID.";
+    } else {
+        $student_id = intval($_POST['student_id']);
 
         try {
             // Start a transaction to ensure all operations are performed atomically
@@ -76,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($error_message)) {
                     alert('Student deleted successfully!');
                     window.location.href = 'student.php'; // Redirect to the student list page
                 </script>";
+
         } catch (Exception $e) {
             // If any exception occurs, roll back the transaction
             $conn->rollback();
@@ -88,13 +94,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($error_message)) {
             $conn->close();
         }
     }
-} elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($error_message)) {
-    $error_message = "Invalid request method.";
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -150,7 +153,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($error_message)) {
         }
     </style>
 </head>
-
 <body>
     <?php if (!empty($error_message)): ?>
         <!-- Error Modal -->
@@ -163,5 +165,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($error_message)) {
         </div>
     <?php endif; ?>
 </body>
-
 </html>

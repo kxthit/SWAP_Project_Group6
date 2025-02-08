@@ -9,7 +9,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Check if passwords match
     if ($new_password !== $confirm_password) {
-        die("Passwords do not match.");
+        echo "<script>
+        alert('Passwords do not match! Please reset it properly.'); // Alert message
+        window.location.href = 'reset_password.php'; // Redirect to the given URL
+        </script>";
+        exit;
     }
 
     // Hash the new password
@@ -29,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
 
         // Invalidate the token by setting it to NULL in the `student` table
-       // After successfully resetting the password
+        // After successfully resetting the password
         $stmt = $conn->prepare("
         UPDATE student 
         SET is_password_set = TRUE, reset_token = NULL, reset_token_expires = NULL 
@@ -43,8 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Redirect to the login page with a success message
         session_start();
-        $_SESSION['success_message'] = "Password has been successfully reset. You can now log in.";
-        header("Location: login.php");
+        echo "<script>
+            alert('Password Reset Succesfull!'); // Alert message
+            window.location.href = 'loginform.php'; // Redirect to the given URL
+            </script>";
         exit;
     } catch (Exception $e) {
         // Roll back the transaction in case of error
@@ -54,4 +60,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->close();
     }
 }
-?>

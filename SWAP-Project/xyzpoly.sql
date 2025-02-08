@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 23, 2025 at 12:52 PM
+-- Generation Time: Feb 02, 2025 at 03:29 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -247,17 +247,20 @@ CREATE TABLE `student` (
   `student_phone` varchar(15) NOT NULL,
   `department_id` int(11) DEFAULT NULL,
   `user_id` int(11) NOT NULL,
-  `profile_picture` varchar(255) NOT NULL
+  `profile_picture` varchar(255) NOT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_token_expires` datetime DEFAULT NULL,
+  `is_password_set` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `student`
 --
 
-INSERT INTO `student` (`student_id`, `student_name`, `student_email`, `student_phone`, `department_id`, `user_id`, `profile_picture`) VALUES
-(1, 'Hee Jian Feng', 'discreet@email.com', '89998212', 2, 1, 'swap_project\\pfp.jpg'),
-(2, 'Priya Dharsini Selvaraj\r\n', 'pripro@email.com\r\n', '812345678', 2, 3, ''),
-(3, 'Nur Umairah Binte Mohamad Faizal\r\n\r\n', 'mastura@email.com\r\n', '88888888', 3, 8, '');
+INSERT INTO `student` (`student_id`, `student_name`, `student_email`, `student_phone`, `department_id`, `user_id`, `profile_picture`, `reset_token`, `reset_token_expires`, `is_password_set`) VALUES
+(1, 'Hee Jian Feng', '2300238i@student.tp.edu.sg', '89998212', 2, 1, 'swap_project\\pfp.jpg', NULL, NULL, 1),
+(2, 'Priya Dharsini Selvaraj\r\n', '2303453a@student.tp.edu.sg\r\n', '812345678', 2, 3, '', NULL, NULL, 0),
+(3, 'Nur Umairah Binte Mohamad Faizal\r\n\r\n', '2301810D@student.tp.edu.sg', '88888888', 3, 8, '', NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -342,7 +345,7 @@ CREATE TABLE `user` (
 --
 
 INSERT INTO `user` (`user_id`, `admission_number`, `hashed_password`, `role_id`) VALUES
-(1, '23012345', '$2y$10$1ljtrPPRAwxs2CP9DDQTOepPjwRxsO9LlSuFW4h1vbJxRl3SEaSZ2', 3),
+(1, '23012345', '$2y$10$gE.CeINOwkL8IV0NiDdR6eR1GO997AgQ8NShRVcvyf5QBFtDeMpp.', 3),
 (2, 'FT01167G', '$2y$10$qJY4x/OmvXWzC1w0NMqbpuUt38/nR53ib4fG1HJ4Jh3Y39x6JNlyy', 2),
 (3, '2301117G', '$2y$10$/lo5e6Im/C.mxwY6rCSkleeoawmb8wqlr15uPLHC/Tec0qcrKawo2', 3),
 (4, 'FT08274K', '$2y$10$DwflQVxCO6KAi7ndaY8ZAuQdy5KCKB1E0PoP6gOcudrBaX4TR7Bay', 1),
