@@ -1,0 +1,243 @@
+       /* General Reset */
+       body {
+        font-family: 'Source Sans Pro', sans-serif;
+        background-color: #f5f7fc;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Container Styles */
+    .form-container {
+        background: #c3d9e5;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        width: 500%;
+        max-width: 1000px;
+        margin: 40px auto;
+        text-align: center;
+        border: 2px solid #ecdfce;
+        margin-right: 460px;
+    }
+
+    form {
+        padding: 1.5rem;
+    }
+
+    h1 {
+        color: #1a1a1a;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    h2 {
+        font-size: 22px;
+        color: #112633;
+    }
+
+    /* Form Styles */
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        text-align: left;
+        margin-top: 20px;
+    }
+
+    .checkbox-group div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid #ddd;
+        background: #f9f9f9;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        margin-right: 10px;
+        transform: scale(1.2);
+    }
+
+    /* Status Button Styling */
+    .badges {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .status-icon {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 2px solid transparent;
+        text-align: center;
+        display: inline-block;
+        font-weight: bold;
+    }
+
+    .status-green {
+        background-color: rgba(34, 197, 94, 0.10);
+        color: rgb(34, 197, 94);
+        border: 2px solid rgb(34, 197, 94);
+    }
+
+    .status-yellow {
+        background-color: rgba(255, 200, 35, 0.1);
+        color: rgb(234, 179, 8);
+        border: 2px solid rgb(234, 179, 8);
+    }
+
+    .status-red {
+        background-color: rgba(239, 68, 68, 0.10);
+        color: rgb(239, 68, 68);
+        border: 2px solid rgb(239, 68, 68);
+    }
+
+    .status-blue {
+        background-color: rgba(59, 130, 246, 0.10);
+        color: rgb(59, 130, 246);
+        border: 2px solid rgb(59, 130, 246);
+    }
+
+    /* Button Styling */
+    button {
+        display: block;
+        width: 40%;
+        padding: 0.8rem;
+        background-color: #3b667e;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-top: 2rem;
+        margin-left: auto;
+        margin-right: auto;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+
+    button:hover {
+        background-color: #ecdfce;
+        color: #2b2d42;
+        box-shadow: 0 0 15px 4px #3D5671;
+    }
+
+    /* Readonly Text */
+    .readonly-text {
+        font-weight: bold;
+        color: #555;
+        padding: 10px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Error Messages */
+    .error-messages {
+        background-color: #ffdddd;
+        color: #d8000c;
+        border: 1px solid #d8000c;
+        border-radius: 5px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        text-align: left;
+    }
+
+    .error-messages ul {
+        list-style-type: disc;
+        padding-left: 20px;
+        margin: 0;
+    }
+
+    .error-messages li {
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    /* Error Modal */
+    .error-modal {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .error-modal-content {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 90%;
+    }
+
+    .error-modal-content h2 {
+        color: #d8000c;
+        margin-bottom: 1rem;
+    }
+
+    .error-modal-content button {
+        background-color: #2c6485;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .error-modal-content button:hover {
+        background-color: #22303f;
+    }
+
+    /* Container for Back Button + Main Content */
+    .page-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Centers the student details */
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto; /* Centers content horizontally */
+        padding-top: 20px;
+        position: relative; /* Ensures proper alignment */
+    }
+
+    /* Flexbox for Back Button */
+    .top-section {
+        display: flex;
+        justify-content: flex-start; /* Aligns Back button to the left */
+        width: 100%;
+        margin-top: 50px;
+        margin-bottom: -100px;
+        margin-left:-400px;
+    }
+
+    /* Back Button Styling */
+    .back-button {
+        padding: 10px 15px;
+        background-color: #3b667e;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+    }
+
+    .back-button:hover {
+        background-color: #ecdfce;
+        color: #2b2d42;
+        box-shadow: 0 0 10px 2px #3D5671;
+    }
+
