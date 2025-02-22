@@ -1,4 +1,4 @@
-# SWAP - Group 6
+# Secure AMC Student Management System - SWAP Group 6
 
 ## Members
 - Kathit Sagar
